@@ -34,7 +34,7 @@ int main (void)
 	
 	/* Start the Touchscreen task */
 	vStartLcd(1, xCmdQ);
-
+//test
 	/* Start the Lightning task */
 	vStartSensors(1, xCmdQ);
 
