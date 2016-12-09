@@ -35,10 +35,15 @@ Button buttons[] = {
     {DICE, 0, 240, 80, 320, "DICE", OFF, CYAN},
     {AISLE, 160, 0, 240, 80, "AISLE", OFF, YELLOW},
     {SEATING, 160, 240, 240, 320, "SEATING", OFF, RED},
-    {SLI, 25, 100, 50, 125, "+", OFF, LIGHT_GRAY},
-    {SLD, 25, 200, 50, 225, "-", OFF, LIGHT_GRAY},
-    {SRI, 185, 100, 210, 125, "+", OFF, LIGHT_GRAY},
-    {SRD, 185, 200, 210, 225, "-", OFF, LIGHT_GRAY},
+    {SLI, 25, 100, 50, 125, "+", OFF, LIGHT_GRAY},      /* Slider Left + */
+    {SLD, 25, 200, 50, 225, "-", OFF, LIGHT_GRAY},      /* Slider Left - */
+    {SRI, 185, 100, 210, 125, "+", OFF, LIGHT_GRAY},    /* Slider Right + */
+    {SRD, 185, 200, 210, 225, "-", OFF, LIGHT_GRAY},    /* Slider Right - */
+};
+
+Slider_t slider[] = {
+    {LEVEL3, {{25,135,50,145},{25,150,50,160},{25,165,50,175},{25,175,50,185},{25,190,50,200}}, LIGHT_GRAY},
+    {LEVEL3, {{185,135,210,145},{185,150,210,160},{185,165,210,175},{185,175,210,185},{185,190,210,200}}, LIGHT_GRAY},
 };
 
 void vStartLcd( unsigned portBASE_TYPE uxPriority, xQueueHandle xQueue )
@@ -56,6 +61,7 @@ void vStartLcd( unsigned portBASE_TYPE uxPriority, xQueueHandle xQueue )
 void DrawSlider()
 {
     Region_t region;
+    int i;
 
     lcd_line(37, 125, 37, 200, LIGHT_GRAY);
     lcd_line(197, 125, 197, 200, LIGHT_GRAY);
@@ -66,8 +72,10 @@ void DrawSlider()
                 buttons[region].y0+10,
                 buttons[region].display);
     }
-    //lcd_fillRect(185, 145, 210, 155, LIGHT_GRAY);
-    //lcd_fillRect(25, 145, 50, 155, LIGHT_GRAY);
+    for (i = 0; i < MAX_SLIDER; i++) {
+        Slider_Level_t temp = slider[i].level;
+        lcd_fillRect(slider[i].slider_pos[temp].x0, slider[i].slider_pos[temp].y0, slider[i].slider_pos[temp].x1, slider[i].slider_pos[temp].y1                     , slider[i].color);
+    }
 }
 
 static void drawButton(Button *button)
@@ -132,7 +140,7 @@ void StateCheck(Region_t region)
                 buttons[i].state = ON;
             }
         }
-    } else {    /* STATE CHANGE BASED ON SINGLE REGION */
+    } else if (region >= WHITEBOARD && region <= SEATING ) {   /* STATE CHANGE BASED ON INDIVIDUAL REGION */
         if (buttons[region].state == ON) {
             buttons[region].state = OFF;
             buttons[MASTER].state = OFF;
@@ -143,6 +151,15 @@ void StateCheck(Region_t region)
                 buttons[MASTER].state = ON;
             }
         }
+    } else if (region >= SLI && region <= SRD ) {   /* SLIDERS STATES */
+        if (region == SLI && slider[0].level != LEVEL5)
+            slider[0].level++;
+        else if (region == SLD && slider[0].level != LEVEL1)
+            slider[0].level--;
+        if (region == SRI && slider[1].level != LEVEL5)
+            slider[1].level++;
+        else if (region == SRD && slider[1].level != LEVEL1)
+            slider[1].level--;
     }
 }
 

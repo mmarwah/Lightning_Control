@@ -24,6 +24,7 @@
 
 /* Maximum task stack size */
 #define sensorsSTACK_SIZE			( ( unsigned portBASE_TYPE ) 256 )
+unsigned char PwmMap[] = { 0x19, 0x40, 0x80, 0xC0, 0xFF };
 
 /* The LCD task. */
 static void vSensorsTask( void *pvParameters );
@@ -58,7 +59,7 @@ void vStartSensors( unsigned portBASE_TYPE uxPriority, xQueueHandle xQueue )
 
 
 /* Set PCA9532 LEDs */
-void I2C_Utils(int choice, unsigned char *LedMap)
+void I2C_Utils(int choice, unsigned char *LedMap, unsigned char pwm0, unsigned char pwm1)
 {
 	unsigned char ledData;
 
@@ -113,9 +114,9 @@ void I2C_Utils(int choice, unsigned char *LedMap)
         while (!(I20CONSET & I2C_SI));
 
         ledData = I20DAT;
-        ( * LedMap) = ledData ^ 0xf;
+        ( *LedMap ) = ledData ^ 0xf;
     } else if (choice == 3) {   /* Set PWM register */
-        /* Send control data to PCA9532 PWM0 register */
+        /* Send control data to select PCA9532 PWM0 register */
         I20DAT = 0x03;
         I20CONCLR =  I2C_SI;
 
@@ -123,23 +124,26 @@ void I2C_Utils(int choice, unsigned char *LedMap)
         while (!(I20CONSET & I2C_SI));
 
 
-        /* Send data PCA9532 PWM0 register 25% */
-        I20DAT = 0x00;
+        /* Send data to write PCA9532 PWM0 register */
+        I20DAT = pwm0;
         I20CONCLR =  I2C_SI;
 
         /* Wait for DATA to be sent */
         while (!(I20CONSET & I2C_SI));
 
-        /* Send control data to PCA9532 PWM1 register */
+        /* Send control data to select PCA9532 PWM1 register */
         I20DAT = 0x05;
         I20CONCLR =  I2C_SI;
 
         /* Wait for DATA with control word to be sent */
         while (!(I20CONSET & I2C_SI));
 
-        /* Send data to write PCA9532 PWM1 register	75% 0xC0 */
-        I20DAT = 0xFF;
+        /* Send data to write PCA9532 PWM1 register */
+        I20DAT = pwm1;
         I20CONCLR =  I2C_SI;
+
+        /* Wait for DATA to be sent */
+        while (!(I20CONSET & I2C_SI));
     }
 	/* Request send NAQ and STOP */
 	I20CONSET =  I2C_STO;
@@ -169,6 +173,8 @@ static portTASK_FUNCTION( vSensorsTask, pvParameters )
 {
     portTickType xLastWakeTime;
     unsigned char data;
+    unsigned char PWM0 = 0x80;      /* Default 50% Brightness */
+    unsigned char PWM1 = 0x80;      /* Default 50% Brightness */
     xQueueHandle xCmdQ;
     Command cmd;
 
@@ -180,24 +186,29 @@ static portTASK_FUNCTION( vSensorsTask, pvParameters )
 	printf("Starting sensor poll ...\r\n");
 
     /* Set PWM0 and PWM1 */
-    I2C_Utils(3, &data);
+    I2C_Utils(3, &data, PWM0, PWM1);
 
 	/* initial xLastWakeTime for accurate polling interval */
 	xLastWakeTime = xTaskGetTickCount();
-					 
-	/* Infinite loop blocks waiting for a touch screen interrupt event from
-	 * the queue. */
-	while( 1 )
+
+    /* Infinite loop blocks waiting for a touch screen interrupt event from
+     * the queue. */
+    while( 1 )
     {
         /* Get command from Q */
         xQueueReceive(xCmdQ, &cmd, portMAX_DELAY);
-        
-        data = SetLedState();
 
-        /* Set PCA9532 LEDs */
-        I2C_Utils(1, &data);
-        
+        if ( region >= WHITEBOARD && region <= SEATING ) {
+            data = SetLedState();
+            /* Set PCA9532 LEDs */
+            I2C_Utils(1, &data, PWM0, PWM1);
+        } else if ( region >= SLI && region <= SRD ) {
+            PWM0 = PwmMap[slider[0].level];
+            PWM1 = PwmMap[slider[1].level];
+            I2C_Utils(3, &data, PWM0, PWM1);
+        }
+
         /* delay before next poll */
-    	vTaskDelayUntil( &xLastWakeTime, 20);
-	}
+        vTaskDelayUntil( &xLastWakeTime, 20);
+    }
 }
