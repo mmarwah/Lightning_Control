@@ -24,7 +24,6 @@
 
 /* Maximum task stack size */
 #define sensorsSTACK_SIZE			( ( unsigned portBASE_TYPE ) 256 )
-Button buttons[];
 
 /* The LCD task. */
 static void vSensorsTask( void *pvParameters );
