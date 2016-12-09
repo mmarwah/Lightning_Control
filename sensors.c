@@ -24,6 +24,7 @@
 
 /* Maximum task stack size */
 #define sensorsSTACK_SIZE			( ( unsigned portBASE_TYPE ) 256 )
+Button buttons[];
 
 /* The LCD task. */
 static void vSensorsTask( void *pvParameters );
@@ -151,6 +152,21 @@ void I2C_Utills(int choice, unsigned char *LedMap)
 	while (I20CONSET & I2C_STO);
 }
 
+unsigned char SetLedState()
+{
+    unsigned char ledstate = 0x00;
+
+    if (buttons[WHITEBOARD].state == ON)
+        ledstate |= 0x02;
+    if (buttons[DICE].state == ON)
+        ledstate |= 0x08;
+    if (buttons[AISLE].state == ON)
+        ledstate |= 0x30;
+    if (buttons[SEATING].state == ON)
+        ledstate |= 0xC0;
+    
+    return ledstate;
+}
 
 static portTASK_FUNCTION( vSensorsTask, pvParameters )
 {
@@ -184,7 +200,8 @@ static portTASK_FUNCTION( vSensorsTask, pvParameters )
         /* Get command from Q */
         xQueueReceive(xCmdQ, &cmd, portMAX_DELAY);
         
-        /* Get state of LEDs using I2C utils and update the state in button map using mutex control */
+        data = SetLedState();
+#if 0
         /* Execute command */
         switch (cmd.region)
         {
@@ -206,6 +223,7 @@ static portTASK_FUNCTION( vSensorsTask, pvParameters )
                 data = 0xFA;		/* MASTER --> ALL LEDs */
                 break;
         }
+#endif
         /* Set PCA9532 LEDs */
         I2C_Utills(1, &data);
 

@@ -131,7 +131,7 @@ void StateCheck(Region_t region)
                 buttons[i].state = ON;
             }
         }
-    } else {
+    } else {    /* STATE CHANGE BASED ON SINGLE REGION */
         if (buttons[region].state == ON) {
             buttons[region].state = OFF;
             buttons[MASTER].state = OFF;
