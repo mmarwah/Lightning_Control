@@ -28,8 +28,6 @@
 /* The LCD task. */
 static void vSensorsTask( void *pvParameters );
 
-
-
 void vStartSensors( unsigned portBASE_TYPE uxPriority, xQueueHandle xQueue )
 {
 	static xQueueHandle xCmdQ;
@@ -60,7 +58,7 @@ void vStartSensors( unsigned portBASE_TYPE uxPriority, xQueueHandle xQueue )
 
 
 /* Set PCA9532 LEDs */
-void I2C_Utills(int choice, unsigned char *LedMap)
+void I2C_Utils(int choice, unsigned char *LedMap)
 {
 	unsigned char ledData;
 
@@ -156,13 +154,13 @@ unsigned char SetLedState()
     unsigned char ledstate = 0x00;
 
     if (buttons[WHITEBOARD].state == ON)
-        ledstate |= 0x02;
+        ledstate |= 0x02;       /* LED8 --> PWM0 */
     if (buttons[DICE].state == ON)
-        ledstate |= 0x08;
+        ledstate |= 0x08;       /* LED9 --> PWM0 */
     if (buttons[AISLE].state == ON)
-        ledstate |= 0x30;
+        ledstate |= 0x30;       /* LED10 --> PWM1 */
     if (buttons[SEATING].state == ON)
-        ledstate |= 0xC0;
+        ledstate |= 0xC0;       /* LED11 --> PWM1 */
     
     return ledstate;
 }
@@ -170,14 +168,9 @@ unsigned char SetLedState()
 static portTASK_FUNCTION( vSensorsTask, pvParameters )
 {
     portTickType xLastWakeTime;
-    unsigned char buttonState;
-    unsigned char lastButtonState;
-    unsigned char changedState;
-    unsigned int i;
-    unsigned char mask;
+    unsigned char data;
     xQueueHandle xCmdQ;
     Command cmd;
-    unsigned char data;
 
     xCmdQ = * ( ( xQueueHandle * ) pvParameters );
 
@@ -187,7 +180,7 @@ static portTASK_FUNCTION( vSensorsTask, pvParameters )
 	printf("Starting sensor poll ...\r\n");
 
     /* Set PWM0 and PWM1 */
-    I2C_Utills(3, &data);
+    I2C_Utils(3, &data);
 
 	/* initial xLastWakeTime for accurate polling interval */
 	xLastWakeTime = xTaskGetTickCount();
@@ -200,53 +193,9 @@ static portTASK_FUNCTION( vSensorsTask, pvParameters )
         xQueueReceive(xCmdQ, &cmd, portMAX_DELAY);
         
         data = SetLedState();
-#if 0
-        /* Execute command */
-        switch (cmd.region)
-        {
-            case 1:
-                /* Based on the state toggle the LED .. make sure other LEDs
-                 * state remains same */
-                data = 0x02;		/* WHITE BOARD --> LED 8 */
-                break;
-            case 2:
-                data = 0x08;		/* DICE --> LED 9 */
-                break;
-            case 3:
-                data = 0x30;		/* AISLE --> LED 10 */
-                break;
-            case 4:
-                data = 0xC0;		/* SEATING --> LED 11 */
-                break;
-            case 0:
-                data = 0xFA;		/* MASTER --> ALL LEDs */
-                break;
-        }
-#endif
+
         /* Set PCA9532 LEDs */
-        I2C_Utills(1, &data);
-
-#if 0
-        changedState = buttonState ^ lastButtonState;
-
-        if (buttonState != lastButtonState)
-		{
-		    /* iterate over each of the 4 LS bits looking for changes in state */
-			for (i = 0; i <= 3; i = i++)
-            {
-                mask = 1 << i;
-                
-                if (changedState & mask)
-                {
-                    printf("Button %u is %s\r\n", i,
-                        (buttonState & mask) ? "on" : "off");
-                }
-		    }
-		    
-			/* remember new state */
-			lastButtonState = buttonState;
-		}
-#endif
+        I2C_Utils(1, &data);
         
         /* delay before next poll */
     	vTaskDelayUntil( &xLastWakeTime, 20);

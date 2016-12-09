@@ -35,8 +35,11 @@ Button buttons[] = {
     {DICE, 0, 240, 80, 320, "DICE", OFF, CYAN},
     {AISLE, 160, 0, 240, 80, "AISLE", OFF, YELLOW},
     {SEATING, 160, 240, 240, 320, "SEATING", OFF, RED},
+    {SL+, 25, 75, 50, 100, "+", OFF, LIGHT_GRAY},
+    {SL-, 25, 200, 50, 225, "-", OFF, LIGHT_GRAY},
+    {SR+, 185, 75, 210, 100, "+", OFF, LIGHT_GRAY},
+    {SR-, 185, 200, 210, 225, "-", OFF, LIGHT_GRAY},
 };
-
 
 void vStartLcd( unsigned portBASE_TYPE uxPriority, xQueueHandle xQueue )
 {
@@ -52,50 +55,48 @@ void vStartLcd( unsigned portBASE_TYPE uxPriority, xQueueHandle xQueue )
 
 void DrawSlider()
 {
-    /*Slider 1*/
-    lcd_fillRect(25, 100, 50, 125, LIGHT_GRAY);
-    lcd_putString(35, 110, "+");
-    lcd_fillRect(25, 200, 50, 225, LIGHT_GRAY);
-    lcd_putString(35, 210, "-");
-    lcd_fillRect(25, 145, 50, 155, LIGHT_GRAY);
-    lcd_line(37, 125, 37, 200, LIGHT_GRAY);
-    /* Slider 2*/
-    lcd_fillRect(185, 100, 210, 125, LIGHT_GRAY);
-    lcd_putString(195, 110, "+");
-    lcd_fillRect(185, 200, 210, 225, LIGHT_GRAY);
-    lcd_putString(195, 210, "-");
-    lcd_fillRect(185, 145, 210, 155, LIGHT_GRAY);
-    lcd_line(197, 125, 197, 200, LIGHT_GRAY);
+    Region_t region;
+
+    lcd_line(37, 100, 37, 200, LIGHT_GRAY);
+    lcd_line(197, 100, 197, 200, LIGHT_GRAY);
+    for ( region = SL+; region <= SR-; region++ ) {
+        lcd_fillRect(buttons.x0, buttons.y0, buttons.x1, buttons.y1, buttons.color);
+        /* Print Region name */
+        lcd_putString( buttons.x0 + (((buttons.x1 - buttons.x0) - (strlen(buttons.display) * 5)) / 2),
+                buttons.y0 + 29,
+                buttons.display);
+    }
+    //lcd_fillRect(185, 145, 210, 155, LIGHT_GRAY);
+    //lcd_fillRect(25, 145, 50, 155, LIGHT_GRAY);
 }
 
 static void drawButton(Button *button)
 {
-		char buffer[5];
-	
-		if(button->state == OFF)
-			strcpy(buffer, "OFF");
-		else
-			strcpy(buffer, "ON");
-		
+    char buffer[5];
+
+    if(button->state == OFF)
+        strcpy(buffer, "OFF");
+    else
+        strcpy(buffer, "ON");
+
     lcd_fillRect(button->x0, button->y0, button->x1, button->y1, button->color);
 
     /* Print Region name */
-		lcd_putString( button->x0 + (((button->x1 - button->x0) - (strlen(button->display) * 5)) / 2),
+    lcd_putString( button->x0 + (((button->x1 - button->x0) - (strlen(button->display) * 5)) / 2),
             button->y0 + 29,
             button->display);
-		
-		/* Print Button Status */
-	  lcd_putString( button->x0 + (((button->x1 - button->x0) - 15) / 2),
+
+    /* Print Button Status */
+    lcd_putString( button->x0 + (((button->x1 - button->x0) - 15) / 2),
             button->y0 + 45,
             buffer);
 }
-
 
 static void drawScreen()
 {
     int i;
     lcd_fillScreen(WHITE);
-		DrawSlider();
+    DrawSlider();
 
     for (i = 0; i < MAX_BUTTON; i++) {
         drawButton(&buttons[i]);
