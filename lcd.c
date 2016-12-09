@@ -29,6 +29,15 @@ xSemaphoreHandle xLcdSemphr;
 
 Command cmd;
 
+Button buttons[] = {
+    {MASTER, 80, 120, 160, 200, "MASTER", OFF, BLUE},
+    {WHITEBOARD, 0, 0, 80, 80, "WHITEBOARD", OFF, OLIVE},
+    {DICE, 0, 240, 80, 320, "DICE", OFF, CYAN},
+    {AISLE, 160, 0, 240, 80, "AISLE", OFF, YELLOW},
+    {SEATING, 160, 240, 240, 320, "SEATING", OFF, RED},
+};
+
+
 void vStartLcd( unsigned portBASE_TYPE uxPriority, xQueueHandle xQueue )
 {
 	static xQueueHandle xCmdQ;
@@ -110,26 +119,27 @@ static Button * getButton(unsigned int x, unsigned int y)
 
 void StateCheck(Region_t region)
 {
+	int i;
     if (region == MASTER) {     /* STATE CHANGE BASED ON MASTER */
-        if (buttons[WHITEBOARD].ButtonState == ON && buttons[DICE].ButtonState == ON 
-                && buttons[AISLE].ButtonState == ON && buttons[SEATING].ButtonState == ON) {
-            for ( int i = 0; i < MAX_BUTTON; i++ ) {
-                buttons[i].ButtonState = OFF;
+        if (buttons[WHITEBOARD].state == ON && buttons[DICE].state == ON 
+                && buttons[AISLE].state == ON && buttons[SEATING].state == ON) {
+            for ( i = 0; i < MAX_BUTTON; i++ ) {
+                buttons[i].state = OFF;
             } 
         } else {
-            for ( int i = 0; i < MAX_BUTTON; i++ ) {
-                buttons[i].ButtonState = ON;
+            for ( i = 0; i < MAX_BUTTON; i++ ) {
+                buttons[i].state = ON;
             }
         }
     } else {
-        if (buttons[region].ButtonState == ON) {
-            buttons[region].ButtonState = OFF;
-            buttons[MASTER].ButtonState = OFF;
-        } else if (buttons[region].ButtonState == OFF) {
-            buttons[region].ButtonState = ON;
-            if (buttons[WHITEBOARD].ButtonState == ON && buttons[DICE].ButtonState == ON 
-                    && buttons[AISLE].ButtonState == ON && buttons[SEATING].ButtonState == ON) {
-                buttons[MASTER].ButtonState = ON;
+        if (buttons[region].state == ON) {
+            buttons[region].state = OFF;
+            buttons[MASTER].state = OFF;
+        } else if (buttons[region].state == OFF) {
+            buttons[region].state = ON;
+            if (buttons[WHITEBOARD].state == ON && buttons[DICE].state == ON 
+                    && buttons[AISLE].state == ON && buttons[SEATING].state == ON) {
+                buttons[MASTER].state = ON;
             }
         }
     }

@@ -58,11 +58,6 @@ void vStartSensors( unsigned portBASE_TYPE uxPriority, xQueueHandle xQueue )
 	printf("Sensor task started ...\r\n");
 }
 
-void GetLedState()
-{
-    unsigned char LedData;
-    I2C_Utills(2, &LedData);
-}
 
 /* Set PCA9532 LEDs */
 void I2C_Utills(int choice, unsigned char *LedMap)
