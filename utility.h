@@ -21,10 +21,10 @@ typedef enum Region_t
     DICE,
     AISLE,
     SEATING,
-    SL+,
-    SL-,
-    SR+,
-    SR-
+    SLI,
+    SLD,
+    SRI,
+    SRD
 } Region_t;
 
 typedef enum ButtonState

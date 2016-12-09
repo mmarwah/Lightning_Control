@@ -35,10 +35,10 @@ Button buttons[] = {
     {DICE, 0, 240, 80, 320, "DICE", OFF, CYAN},
     {AISLE, 160, 0, 240, 80, "AISLE", OFF, YELLOW},
     {SEATING, 160, 240, 240, 320, "SEATING", OFF, RED},
-    {SL+, 25, 75, 50, 100, "+", OFF, LIGHT_GRAY},
-    {SL-, 25, 200, 50, 225, "-", OFF, LIGHT_GRAY},
-    {SR+, 185, 75, 210, 100, "+", OFF, LIGHT_GRAY},
-    {SR-, 185, 200, 210, 225, "-", OFF, LIGHT_GRAY},
+    {SLI, 25, 100, 50, 125, "+", OFF, LIGHT_GRAY},
+    {SLD, 25, 200, 50, 225, "-", OFF, LIGHT_GRAY},
+    {SRI, 185, 100, 210, 125, "+", OFF, LIGHT_GRAY},
+    {SRD, 185, 200, 210, 225, "-", OFF, LIGHT_GRAY},
 };
 
 void vStartLcd( unsigned portBASE_TYPE uxPriority, xQueueHandle xQueue )
@@ -57,14 +57,14 @@ void DrawSlider()
 {
     Region_t region;
 
-    lcd_line(37, 100, 37, 200, LIGHT_GRAY);
-    lcd_line(197, 100, 197, 200, LIGHT_GRAY);
-    for ( region = SL+; region <= SR-; region++ ) {
-        lcd_fillRect(buttons.x0, buttons.y0, buttons.x1, buttons.y1, buttons.color);
+    lcd_line(37, 125, 37, 200, LIGHT_GRAY);
+    lcd_line(197, 125, 197, 200, LIGHT_GRAY);
+    for ( region = SLI; region <= SRD; region++ ) {
+        lcd_fillRect(buttons[region].x0, buttons[region].y0, buttons[region].x1, buttons[region].y1, buttons[region].color);
         /* Print Region name */
-        lcd_putString( buttons.x0 + (((buttons.x1 - buttons.x0) - (strlen(buttons.display) * 5)) / 2),
-                buttons.y0 + 29,
-                buttons.display);
+        lcd_putString( buttons[region].x0 + (((buttons[region].x1 - buttons[region].x0) - (strlen(buttons[region].display) * 5)) / 2),
+                buttons[region].y0+10,
+                buttons[region].display);
     }
     //lcd_fillRect(185, 145, 210, 155, LIGHT_GRAY);
     //lcd_fillRect(25, 145, 50, 155, LIGHT_GRAY);
