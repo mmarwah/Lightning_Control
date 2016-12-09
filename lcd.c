@@ -17,16 +17,6 @@
 /* Maximum task stack size */
 #define lcdSTACK_SIZE			( ( unsigned portBASE_TYPE ) 256 )
 
-/* Button Area Map */
-Button buttons[] = {
-    {MASTER, 80, 120, 160, 200, "MASTER", OFF, BLUE},
-    {WHITEBOARD, 0, 0, 80, 80, "WHITEBOARD", OFF, OLIVE},
-    {DICE, 0, 240, 80, 320, "DICE", OFF, CYAN},
-    {AISLE, 160, 0, 240, 80, "AISLE", OFF, YELLOW},
-    {SEATING, 160, 240, 240, 320, "SEATING", OFF, RED},
-};
-
-
 /* Interrupt handlers */
 extern void vLCD_ISREntry( void );
 void vLCD_ISRHandler( void );
@@ -38,6 +28,7 @@ static void vLcdTask( void *pvParameters );
 xSemaphoreHandle xLcdSemphr;
 
 Command cmd;
+
 void vStartLcd( unsigned portBASE_TYPE uxPriority, xQueueHandle xQueue )
 {
 	static xQueueHandle xCmdQ;
@@ -117,13 +108,40 @@ static Button * getButton(unsigned int x, unsigned int y)
     return result;
 }
 
+void StateCheck(Region_t region)
+{
+    if (region == MASTER) {     /* STATE CHANGE BASED ON MASTER */
+        if (buttons[WHITEBOARD].ButtonState == ON && buttons[DICE].ButtonState == ON 
+                && buttons[AISLE].ButtonState == ON && buttons[SEATING].ButtonState == ON) {
+            for ( int i = 0; i < MAX_BUTTON; i++ ) {
+                buttons[i].ButtonState = OFF;
+            } 
+        } else {
+            for ( int i = 0; i < MAX_BUTTON; i++ ) {
+                buttons[i].ButtonState = ON;
+            }
+        }
+    } else {
+        if (buttons[region].ButtonState == ON) {
+            buttons[region].ButtonState = OFF;
+            buttons[MASTER].ButtonState = OFF;
+        } else if (buttons[region].ButtonState == OFF) {
+            buttons[region].ButtonState = ON;
+            if (buttons[WHITEBOARD].ButtonState == ON && buttons[DICE].ButtonState == ON 
+                    && buttons[AISLE].ButtonState == ON && buttons[SEATING].ButtonState == ON) {
+                buttons[MASTER].ButtonState = ON;
+            }
+        }
+    }
+}
+
 static portTASK_FUNCTION( vLcdTask, pvParameters )
 {
-	unsigned int pressure;
-	unsigned int xPos;
-	unsigned int yPos;
-	portTickType xLastWakeTime;
-	xQueueHandle xCmdQ;
+    unsigned int pressure;
+    unsigned int xPos;
+    unsigned int yPos;
+    portTickType xLastWakeTime;
+    xQueueHandle xCmdQ;
     Button *pressedButton;
 
     /* Just to stop compiler warnings. */
@@ -131,58 +149,58 @@ static portTASK_FUNCTION( vLcdTask, pvParameters )
 
     xCmdQ = * ( ( xQueueHandle * ) pvParameters );
 
-	printf("Touchscreen task running\r\n");
+    printf("Touchscreen task running\r\n");
 
-	/* Initialise LCD display */
-	lcd_init();
-	
-  drawScreen();
+    /* Initialise LCD display */
+    lcd_init();
 
-	/* Infinite loop blocks waiting for a touch screen interrupt event from
-	 * the queue. */
-	for( ;; )
-	{
-		/* Clear TS interrupts (EINT3) */
-		/* Reset and (re-)enable TS interrupts on EINT3 */
-		EXTINT = 8;						/* Reset EINT3 */
+    drawScreen();
 
-		/* Enable TS interrupt vector (VIC) (vector 17) */
-		VICIntEnable = 1 << 17;			/* Enable interrupts on vector 17 */
+    /* Infinite loop blocks waiting for a touch screen interrupt event from
+     * the queue. */
+    for( ;; )
+    {
+        /* Clear TS interrupts (EINT3) */
+        /* Reset and (re-)enable TS interrupts on EINT3 */
+        EXTINT = 8;						/* Reset EINT3 */
 
-		/* Block on a queue waiting for an event from the TS interrupt handler */
-		xSemaphoreTake(xLcdSemphr, portMAX_DELAY);
-				
-		/* Disable TS interrupt vector (VIC) (vector 17) */
-		VICIntEnClr = 1 << 17;
+        /* Enable TS interrupt vector (VIC) (vector 17) */
+        VICIntEnable = 1 << 17;			/* Enable interrupts on vector 17 */
 
-		/* Measure next sleep interval from this point */
-		xLastWakeTime = xTaskGetTickCount();
+        /* Block on a queue waiting for an event from the TS interrupt handler */
+        xSemaphoreTake(xLcdSemphr, portMAX_DELAY);
 
-		/* Start polling the touchscreen pressure and position ( getTouch(...) ) */
-		/* Keep polling until pressure == 0 */
-		getTouch(&xPos, &yPos, &pressure);
+        /* Disable TS interrupt vector (VIC) (vector 17) */
+        VICIntEnClr = 1 << 17;
+
+        /* Measure next sleep interval from this point */
+        xLastWakeTime = xTaskGetTickCount();
+
+        /* Start polling the touchscreen pressure and position ( getTouch(...) ) */
+        /* Keep polling until pressure == 0 */
+        getTouch(&xPos, &yPos, &pressure);
 
         pressedButton = getButton(xPos, yPos);
-				if (pressedButton) {
-					lcd_fillScreen(pressedButton->color);
-					cmd.region = pressedButton->region;
-					pressedButton->state = pressedButton->state == OFF ? ON : OFF;
-			
-					/* Inform LED task about the region pressed */
-					xQueueSendToBack(xCmdQ, &cmd, portMAX_DELAY);
-				}
+        if (pressedButton) {
+            lcd_fillScreen(pressedButton->color);
+            cmd.region = pressedButton->region;
+            StateCheck(pressedButton->region);
 
-		while (pressure > 0)
-		{
-			/* Get current pressure */
-			getTouch(&xPos, &yPos, &pressure);
+            /* Inform LED task about the region pressed */
+            xQueueSendToBack(xCmdQ, &cmd, portMAX_DELAY);
+        }
 
-			/* Delay to give us a 25ms periodic TS pressure sample */
-			vTaskDelayUntil( &xLastWakeTime, 25 );
-     }
+        while (pressure > 0)
+        {
+            /* Get current pressure */
+            getTouch(&xPos, &yPos, &pressure);
 
-     drawScreen();
-	}
+            /* Delay to give us a 25ms periodic TS pressure sample */
+            vTaskDelayUntil( &xLastWakeTime, 25 );
+        }
+
+        drawScreen();
+    }
 }
 
 

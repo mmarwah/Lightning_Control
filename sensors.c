@@ -58,60 +58,10 @@ void vStartSensors( unsigned portBASE_TYPE uxPriority, xQueueHandle xQueue )
 	printf("Sensor task started ...\r\n");
 }
 
-void setpwm()
+void GetLedState()
 {
-
-	/* Initialise */
-	I20CONCLR =  I2C_AA | I2C_SI | I2C_STA | I2C_STO;
-	
-	/* Request send START */
-	I20CONSET =  I2C_STA;
-
-	/* Wait for START to be sent */
-	while (!(I20CONSET & I2C_SI));
-
-	/* Request send PCA9532 ADDRESS and R/W bit and clear SI */		
-	I20DAT    =  0xC0;
-	I20CONCLR =  I2C_SI | I2C_STA;
-
-	/* Wait for ADDRESS and R/W to be sent */
-	while (!(I20CONSET & I2C_SI));
-	
-	/* Send control data to PCA9532 PWM0 register */
-	I20DAT = 0x03;
-	I20CONCLR =  I2C_SI;
-
-	/* Wait for DATA with control word to be sent */
-	while (!(I20CONSET & I2C_SI));
-
-
-	/* Send data PCA9532 PWM0 register 25% */
-	I20DAT = 0x00;
-	I20CONCLR =  I2C_SI;
-
-	/* Wait for DATA to be sent */
-	while (!(I20CONSET & I2C_SI));
-
-    /* Send control data to PCA9532 PWM1 register */
-	I20DAT = 0x05;
-	I20CONCLR =  I2C_SI;
-
-	/* Wait for DATA with control word to be sent */
-	while (!(I20CONSET & I2C_SI));
-
-	/* Send data to write PCA9532 PWM1 register	75% 0xC0 */
-	I20DAT = 0xFF;
-	I20CONCLR =  I2C_SI;
-
-	/* Wait for DATA with control word to be sent */
-	while (!(I20CONSET & I2C_SI));
-	
-		/* Request send NAQ and STOP */
-	I20CONSET =  I2C_STO;
-	I20CONCLR =  I2C_SI | I2C_AA;
-
-	/* Wait for STOP to be sent */
-	while (I20CONSET & I2C_STO);
+    unsigned char LedData;
+    I2C_Utills(2, &LedData);
 }
 
 /* Set PCA9532 LEDs */
@@ -227,7 +177,7 @@ static portTASK_FUNCTION( vSensorsTask, pvParameters )
 	printf("Starting sensor poll ...\r\n");
 
     /* Set PWM0 and PWM1 */
-	setpwm();
+    I2C_Utills(3, &data);
 
 	/* initial xLastWakeTime for accurate polling interval */
 	xLastWakeTime = xTaskGetTickCount();
@@ -258,14 +208,13 @@ static portTASK_FUNCTION( vSensorsTask, pvParameters )
                 data = 0xC0;		/* SEATING --> LED 11 */
                 break;
             case 0:
-								data = 0xFA;		/* MASTER --> ALL LEDs */
+                data = 0xFA;		/* MASTER --> ALL LEDs */
                 break;
         }
         /* Set PCA9532 LEDs */
         I2C_Utills(1, &data);
 
 #if 0
-
         changedState = buttonState ^ lastButtonState;
 
         if (buttonState != lastButtonState)
@@ -285,7 +234,7 @@ static portTASK_FUNCTION( vSensorsTask, pvParameters )
 			/* remember new state */
 			lastButtonState = buttonState;
 		}
-		#endif
+#endif
         
         /* delay before next poll */
     	vTaskDelayUntil( &xLastWakeTime, 20);

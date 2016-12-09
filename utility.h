@@ -38,4 +38,13 @@ typedef struct button
     lcd_color_t color;
 } Button;
 
+/* Button Area Map */
+Button buttons[] = {
+    {MASTER, 80, 120, 160, 200, "MASTER", OFF, BLUE},
+    {WHITEBOARD, 0, 0, 80, 80, "WHITEBOARD", OFF, OLIVE},
+    {DICE, 0, 240, 80, 320, "DICE", OFF, CYAN},
+    {AISLE, 160, 0, 240, 80, "AISLE", OFF, YELLOW},
+    {SEATING, 160, 240, 240, 320, "SEATING", OFF, RED},
+};
+
 #endif
