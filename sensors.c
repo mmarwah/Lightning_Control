@@ -198,11 +198,11 @@ static portTASK_FUNCTION( vSensorsTask, pvParameters )
         /* Get command from Q */
         xQueueReceive(xCmdQ, &cmd, portMAX_DELAY);
 
-        if ( region >= WHITEBOARD && region <= SEATING ) {
+        if ( cmd.region >= WHITEBOARD && cmd.region <= SEATING ) {
             data = SetLedState();
             /* Set PCA9532 LEDs */
             I2C_Utils(1, &data, PWM0, PWM1);
-        } else if ( region >= SLI && region <= SRD ) {
+        } else if ( cmd.region >= SLI && cmd.region <= SRD ) {
             PWM0 = PwmMap[slider[0].level];
             PWM1 = PwmMap[slider[1].level];
             I2C_Utils(3, &data, PWM0, PWM1);
