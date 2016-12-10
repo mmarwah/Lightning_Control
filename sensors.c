@@ -123,7 +123,6 @@ void I2C_Utils(int choice, unsigned char *LedMap, unsigned char pwm0, unsigned c
         /* Wait for DATA with control word to be sent */
         while (!(I20CONSET & I2C_SI));
 
-
         /* Send data to write PCA9532 PWM0 register */
         I20DAT = pwm0;
         I20CONCLR =  I2C_SI;
@@ -198,7 +197,7 @@ static portTASK_FUNCTION( vSensorsTask, pvParameters )
         /* Get command from Q */
         xQueueReceive(xCmdQ, &cmd, portMAX_DELAY);
 
-        if ( cmd.region >= WHITEBOARD && cmd.region <= SEATING ) {
+        if ( cmd.region >= MASTER && cmd.region <= SEATING ) {
             data = SetLedState();
             /* Set PCA9532 LEDs */
             I2C_Utils(1, &data, PWM0, PWM1);

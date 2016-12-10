@@ -16,10 +16,10 @@ typedef enum Region_t
     DICE,
     AISLE,
     SEATING,
-    SLI,
-    SLD,
-    SRI,
-    SRD
+    SLI,			/* Slider Left + */
+    SLD,      /* Slider Left - */
+    SRI,      /* Slider Right + */
+    SRD       /* Slider Right - */
 } Region_t;
 
 typedef struct Command 

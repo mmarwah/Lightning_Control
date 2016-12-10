@@ -42,8 +42,8 @@ Button buttons[] = {
 };
 
 Slider_t slider[] = {
-    {LEVEL3, {{25,135,50,145},{25,150,50,160},{25,165,50,175},{25,175,50,185},{25,190,50,200}}, LIGHT_GRAY},
-    {LEVEL3, {{185,135,210,145},{185,150,210,160},{185,165,210,175},{185,175,210,185},{185,190,210,200}}, LIGHT_GRAY},
+		{LEVEL3, {{25,188,50,197},{25,175,50,185},{25,160,50,170},{25,145,50,155},{25,130,50,140}}, LIGHT_GRAY},
+    {LEVEL3, {{185,188,210,197},{185,175,210,185},{185,160,210,170},{185,145,210,155},{185,130,210,140}}, LIGHT_GRAY},
 };
 
 void vStartLcd( unsigned portBASE_TYPE uxPriority, xQueueHandle xQueue )
@@ -103,9 +103,9 @@ static void drawButton(Button *button)
 static void drawScreen()
 {
     int i;
+	
     lcd_fillScreen(WHITE);
     DrawSlider();
-
     for (i = 0; i < MAX_BUTTON; i++) {
         drawButton(&buttons[i]);
     }
@@ -116,7 +116,7 @@ static Button * getButton(unsigned int x, unsigned int y)
     int i;
     Button *result = 0;
 
-    for ( i = 0; i < MAX_BUTTON && !result; i++) {
+    for ( i = 0; i < ( MAX_BUTTON + (MAX_SLIDER * 2)) && !result; i++) {
         if (x >= buttons[i].x0 && x <= buttons[i].x1
                 && y >= buttons[i].y0 && y <= buttons[i].y1) {
             result = &buttons[i];
