@@ -42,7 +42,7 @@ Button buttons[] = {
 };
 
 Slider_t slider[] = {
-		{LEVEL3, {{25,188,50,197},{25,175,50,185},{25,160,50,170},{25,145,50,155},{25,130,50,140}}, LIGHT_GRAY},
+    {LEVEL3, {{25,188,50,197},{25,175,50,185},{25,160,50,170},{25,145,50,155},{25,130,50,140}}, LIGHT_GRAY},
     {LEVEL3, {{185,188,210,197},{185,175,210,185},{185,160,210,170},{185,145,210,155},{185,130,210,140}}, LIGHT_GRAY},
 };
 
@@ -128,7 +128,7 @@ static Button * getButton(unsigned int x, unsigned int y)
 
 void StateCheck(Region_t region)
 {
-	int i;
+    int i;
     if (region == MASTER) {     /* STATE CHANGE BASED ON MASTER */
         if (buttons[WHITEBOARD].state == ON && buttons[DICE].state == ON 
                 && buttons[AISLE].state == ON && buttons[SEATING].state == ON) {

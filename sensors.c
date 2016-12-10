@@ -59,7 +59,7 @@ void vStartSensors( unsigned portBASE_TYPE uxPriority, xQueueHandle xQueue )
 
 
 /* Set PCA9532 LEDs */
-void I2C_Utils(int choice, unsigned char *LedMap, unsigned char pwm0, unsigned char pwm1)
+void I2C_Utils(int choice, unsigned char *LedMap, unsigned char pwm)
 {
 	unsigned char ledData;
 
@@ -115,7 +115,7 @@ void I2C_Utils(int choice, unsigned char *LedMap, unsigned char pwm0, unsigned c
 
         ledData = I20DAT;
         ( *LedMap ) = ledData ^ 0xf;
-    } else if (choice == 3) {   /* Set PWM register */
+    } else if (choice == 3) {   /* Set PWM0 register */
         /* Send control data to select PCA9532 PWM0 register */
         I20DAT = 0x03;
         I20CONCLR =  I2C_SI;
@@ -124,12 +124,12 @@ void I2C_Utils(int choice, unsigned char *LedMap, unsigned char pwm0, unsigned c
         while (!(I20CONSET & I2C_SI));
 
         /* Send data to write PCA9532 PWM0 register */
-        I20DAT = pwm0;
+        I20DAT = pwm;
         I20CONCLR =  I2C_SI;
 
         /* Wait for DATA to be sent */
         while (!(I20CONSET & I2C_SI));
-
+    } else if (choice == 4) {   /* Set PWM1 register */
         /* Send control data to select PCA9532 PWM1 register */
         I20DAT = 0x05;
         I20CONCLR =  I2C_SI;
@@ -138,7 +138,7 @@ void I2C_Utils(int choice, unsigned char *LedMap, unsigned char pwm0, unsigned c
         while (!(I20CONSET & I2C_SI));
 
         /* Send data to write PCA9532 PWM1 register */
-        I20DAT = pwm1;
+        I20DAT = pwm;
         I20CONCLR =  I2C_SI;
 
         /* Wait for DATA to be sent */
@@ -185,7 +185,8 @@ static portTASK_FUNCTION( vSensorsTask, pvParameters )
 	printf("Starting sensor poll ...\r\n");
 
     /* Set PWM0 and PWM1 */
-    I2C_Utils(3, &data, PWM0, PWM1);
+    I2C_Utils(3, &data, PWM0);
+    I2C_Utils(4, &data, PWM1);
 
 	/* initial xLastWakeTime for accurate polling interval */
 	xLastWakeTime = xTaskGetTickCount();
@@ -200,11 +201,13 @@ static portTASK_FUNCTION( vSensorsTask, pvParameters )
         if ( cmd.region >= MASTER && cmd.region <= SEATING ) {
             data = SetLedState();
             /* Set PCA9532 LEDs */
-            I2C_Utils(1, &data, PWM0, PWM1);
-        } else if ( cmd.region >= SLI && cmd.region <= SRD ) {
+            I2C_Utils(1, &data, PWM0);
+        } else if ( cmd.region >= SLI && cmd.region <= SLD ) {
             PWM0 = PwmMap[slider[0].level];
+            I2C_Utils(3, &data, PWM0);
+        } else if ( cmd.region >= SRI && cmd.region <= SRD ) {
             PWM1 = PwmMap[slider[1].level];
-            I2C_Utils(3, &data, PWM0, PWM1);
+            I2C_Utils(4, &data, PWM1);
         }
 
         /* delay before next poll */
