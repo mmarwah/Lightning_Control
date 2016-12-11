@@ -35,6 +35,8 @@ Button buttons[] = {
     {DICE, 0, 240, 80, 320, "DICE", OFF, CYAN},
     {AISLE, 160, 0, 240, 80, "AISLE", OFF, YELLOW},
     {SEATING, 160, 240, 240, 320, "SEATING", OFF, RED},
+		{PRESET1, 85, 0, 155, 40, "PRESET1", OFF, DARK_GRAY},
+		{PRESET2, 85, 280, 155, 320, "PRESET2", OFF, DARK_GRAY},
     {SLI, 25, 100, 50, 125, "+", OFF, LIGHT_GRAY},      /* Slider Left + */
     {SLD, 25, 200, 50, 225, "-", OFF, LIGHT_GRAY},      /* Slider Left - */
     {SRI, 185, 100, 210, 125, "+", OFF, LIGHT_GRAY},    /* Slider Right + */
@@ -89,15 +91,21 @@ static void drawButton(Button *button)
 
     lcd_fillRect(button->x0, button->y0, button->x1, button->y1, button->color);
 
+		if ( button->region == PRESET1 || button->region == PRESET2 ) {
+			   /* Print Region name */
+    lcd_putString( button->x0 + (((button->x1 - button->x0) - (strlen(button->display) * 5)) / 2),
+            button->y0 + 20,
+            button->display);
+		} else {
     /* Print Region name */
     lcd_putString( button->x0 + (((button->x1 - button->x0) - (strlen(button->display) * 5)) / 2),
             button->y0 + 29,
             button->display);
-
     /* Print Button Status */
     lcd_putString( button->x0 + (((button->x1 - button->x0) - 15) / 2),
             button->y0 + 45,
             buffer);
+		}
 }
 
 static void drawScreen()
@@ -106,7 +114,7 @@ static void drawScreen()
 	
     lcd_fillScreen(WHITE);
     DrawSlider();
-    for (i = 0; i < MAX_BUTTON; i++) {
+    for (i = 0; i < (MAX_BUTTON + MAX_PRESET); i++) {
         drawButton(&buttons[i]);
     }
 }
@@ -116,7 +124,7 @@ static Button * getButton(unsigned int x, unsigned int y)
     int i;
     Button *result = 0;
 
-    for ( i = 0; i < ( MAX_BUTTON + (MAX_SLIDER * 2)) && !result; i++) {
+    for ( i = 0; i < ( MAX_BUTTON + (MAX_SLIDER * 2) + MAX_PRESET) && !result; i++) {
         if (x >= buttons[i].x0 && x <= buttons[i].x1
                 && y >= buttons[i].y0 && y <= buttons[i].y1) {
             result = &buttons[i];

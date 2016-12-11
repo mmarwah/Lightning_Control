@@ -8,6 +8,7 @@
 #define BAUD_RATE 19200
 #define MAX_BUTTON 5
 #define MAX_SLIDER 2
+#define MAX_PRESET 2
 
 typedef enum Region_t
 {
@@ -16,6 +17,8 @@ typedef enum Region_t
     DICE,
     AISLE,
     SEATING,
+		PRESET1,
+		PRESET2,
     SLI,			/* Slider Left + */
     SLD,      /* Slider Left - */
     SRI,      /* Slider Right + */
