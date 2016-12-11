@@ -35,8 +35,8 @@ Button buttons[] = {
     {DICE, 0, 240, 80, 320, "DICE", OFF, CYAN},
     {AISLE, 160, 0, 240, 80, "AISLE", OFF, YELLOW},
     {SEATING, 160, 240, 240, 320, "SEATING", OFF, RED},
-		{PRESET1, 85, 0, 155, 40, "PRESET1", OFF, DARK_GRAY},
-		{PRESET2, 85, 280, 155, 320, "PRESET2", OFF, DARK_GRAY},
+    {PRESET1, 85, 0, 155, 40, "PRESET1", OFF, DARK_GRAY},
+    {PRESET2, 85, 280, 155, 320, "PRESET2", OFF, DARK_GRAY},
     {SLI, 25, 100, 50, 125, "+", OFF, LIGHT_GRAY},      /* Slider Left + */
     {SLD, 25, 200, 50, 225, "-", OFF, LIGHT_GRAY},      /* Slider Left - */
     {SRI, 185, 100, 210, 125, "+", OFF, LIGHT_GRAY},    /* Slider Right + */
@@ -91,21 +91,21 @@ static void drawButton(Button *button)
 
     lcd_fillRect(button->x0, button->y0, button->x1, button->y1, button->color);
 
-		if ( button->region == PRESET1 || button->region == PRESET2 ) {
-			   /* Print Region name */
-    lcd_putString( button->x0 + (((button->x1 - button->x0) - (strlen(button->display) * 5)) / 2),
-            button->y0 + 20,
-            button->display);
-		} else {
-    /* Print Region name */
-    lcd_putString( button->x0 + (((button->x1 - button->x0) - (strlen(button->display) * 5)) / 2),
-            button->y0 + 29,
-            button->display);
-    /* Print Button Status */
-    lcd_putString( button->x0 + (((button->x1 - button->x0) - 15) / 2),
-            button->y0 + 45,
-            buffer);
-		}
+    if ( button->region == PRESET1 || button->region == PRESET2 ) {
+        /* Print Region name */
+        lcd_putString( button->x0 + (((button->x1 - button->x0) - (strlen(button->display) * 5)) / 2),
+                button->y0 + 20,
+                button->display);
+    } else {
+        /* Print Region name */
+        lcd_putString( button->x0 + (((button->x1 - button->x0) - (strlen(button->display) * 5)) / 2),
+                button->y0 + 29,
+                button->display);
+        /* Print Button Status */
+        lcd_putString( button->x0 + (((button->x1 - button->x0) - 15) / 2),
+                button->y0 + 45,
+                buffer);
+    }
 }
 
 static void drawScreen()
@@ -159,6 +159,18 @@ void StateCheck(Region_t region)
                 buttons[MASTER].state = ON;
             }
         }
+    } else if (region == PRESET1) {   /* PRESET-1, Lecture Mode */
+        buttons[MASTER].state = OFF;
+        buttons[WHITEBOARD].state = ON;
+        buttons[DICE].state = ON;
+        buttons[AISLE].state = ON;
+        buttons[SEATING].state = OFF;
+    } else if (region == PRESET2) {   /* PRESET-2, Exam Mode */
+        buttons[MASTER].state = OFF;
+        buttons[WHITEBOARD].state = OFF;
+        buttons[DICE].state = ON;
+        buttons[AISLE].state = ON;
+        buttons[SEATING].state = ON;
     } else if (region >= SLI && region <= SRD ) {   /* SLIDERS STATES */
         if (region == SLI && slider[0].level != LEVEL5)
             slider[0].level++;

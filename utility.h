@@ -17,8 +17,8 @@ typedef enum Region_t
     DICE,
     AISLE,
     SEATING,
-		PRESET1,
-		PRESET2,
+    PRESET1,
+    PRESET2,
     SLI,			/* Slider Left + */
     SLD,      /* Slider Left - */
     SRI,      /* Slider Right + */

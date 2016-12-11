@@ -198,7 +198,7 @@ static portTASK_FUNCTION( vSensorsTask, pvParameters )
         /* Get command from Q */
         xQueueReceive(xCmdQ, &cmd, portMAX_DELAY);
 
-        if ( cmd.region >= MASTER && cmd.region <= SEATING ) {
+        if ( cmd.region >= MASTER && cmd.region <= PRESET2 ) {
             data = SetLedState();
             /* Set PCA9532 LEDs */
             I2C_Utils(1, &data, PWM0);
