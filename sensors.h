@@ -3,7 +3,7 @@
 #include "freertos.h"
 #include "queue.h"
 
-
 void vStartSensors( unsigned portBASE_TYPE uxPriority, xQueueHandle xQueue );
+void vStartPolling( unsigned portBASE_TYPE uxPriority );
 
 #endif
