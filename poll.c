@@ -26,8 +26,7 @@
 
 /* The LCD task. */
 static void vSensorsTask( void *pvParameters );
-
-
+Command cmd;
 
 void vStartPolling( unsigned portBASE_TYPE uxPriority, xQueueHandle xQueue )
 {
@@ -125,6 +124,9 @@ static portTASK_FUNCTION( vSensorsTask, pvParameters )
 	unsigned char changedState;
 	unsigned int i;
 	unsigned char mask;
+    
+
+     xCmdQ = * ( ( xQueueHandle * ) pvParameters );
 
 	/* Just to stop compiler warnings. */
 	( void ) pvParameters;
@@ -138,14 +140,24 @@ static portTASK_FUNCTION( vSensorsTask, pvParameters )
 	xLastWakeTime = xTaskGetTickCount();
 					 
 	/* Infinite loop blocks waiting for a touch screen interrupt event from
-	 * the queue. */
-	while( 1 )
-	{
-		/* Read buttons */
-		buttonState = getButtons();
+     * the queue. */
+    while( 1 )
+    {
+        /* Read buttons */
+        buttonState = getButtons();
 
+        /* iterate over each of the 4 LS bits looking for changes in state */
+        for (i = 0; i <= 3; i = i++)
+        {
+            mask = 1 << i;
 
-
+            if (!(buttonState & mask))
+            {
+                printf("Button %u is ON\r\n", i);
+                cmd.region = SW1;
+                xQueueSendToBack(xCmdQ, &cmd, portMAX_DELAY);
+            }
+        }
 #if 0
 		changedState = buttonState ^ lastButtonState;
 		

@@ -208,6 +208,8 @@ static portTASK_FUNCTION( vSensorsTask, pvParameters )
         } else if ( cmd.region >= SRI && cmd.region <= SRD ) {
             PWM1 = PwmMap[slider[1].level];
             I2C_Utils(4, &data, PWM1);
+        } else if ( cmd.region >= SW1 && cmd.region <= SW4 ) {
+            printf("INPUT SWITCH PRESSED \r\n");
         }
 
         /* delay before next poll */

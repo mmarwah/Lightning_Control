@@ -4,11 +4,12 @@
 #include"lcd_grph.h"
 
 /* Queue Size */
-#define MAX_EVENTS 16
-#define BAUD_RATE 19200
-#define MAX_BUTTON 5
-#define MAX_SLIDER 2
-#define MAX_PRESET 2
+#define MAX_EVENTS  16
+#define BAUD_RATE   19200
+#define MAX_BUTTON  5
+#define MAX_SLIDER  2
+#define MAX_PRESET  2
+#define MAX_PIR     4
 
 typedef enum Region_t
 {
@@ -19,10 +20,14 @@ typedef enum Region_t
     SEATING,
     PRESET1,
     PRESET2,
-    SLI,			/* Slider Left + */
-    SLD,      /* Slider Left - */
-    SRI,      /* Slider Right + */
-    SRD       /* Slider Right - */
+    SLI,	    /* Slider Left + */
+    SLD,        /* Slider Left - */
+    SRI,        /* Slider Right + */
+    SRD,        /* Slider Right - */
+    SW1,        /* PIR Input 1 */
+    SW2,        /* PIR Input 2 */
+    SW3,        /* PIR Input 3 */
+    SW4         /* PIR Input 4 */
 } Region_t;
 
 typedef struct Command 
