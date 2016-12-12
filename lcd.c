@@ -35,8 +35,8 @@ Button buttons[] = {
     {DICE, 0, 240, 80, 320, "DICE", OFF, CYAN},
     {AISLE, 160, 0, 240, 80, "AISLE", OFF, YELLOW},
     {SEATING, 160, 240, 240, 320, "SEATING", OFF, RED},
-    {PRESET1, 85, 0, 155, 40, "PRESET1", OFF, DARK_GRAY},
-    {PRESET2, 85, 280, 155, 320, "PRESET2", OFF, DARK_GRAY},
+    {PRESET1, 85, 0, 155, 40, "LECTURE", OFF, DARK_GRAY},
+    {PRESET2, 85, 280, 155, 320, "EXAM", OFF, DARK_GRAY},
     {SLI, 25, 100, 50, 125, "+", OFF, LIGHT_GRAY},      /* Slider Left + */
     {SLD, 25, 200, 50, 225, "-", OFF, LIGHT_GRAY},      /* Slider Left - */
     {SRI, 185, 100, 210, 125, "+", OFF, LIGHT_GRAY},    /* Slider Right + */
