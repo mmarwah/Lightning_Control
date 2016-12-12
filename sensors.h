@@ -4,6 +4,6 @@
 #include "queue.h"
 
 void vStartSensors( unsigned portBASE_TYPE uxPriority, xQueueHandle xQueue );
-void vStartPolling( unsigned portBASE_TYPE uxPriority );
+void vStartPolling( unsigned portBASE_TYPE uxPriority, xQueueHandle xQueue );
 
 #endif

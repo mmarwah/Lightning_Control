@@ -29,8 +29,11 @@ static void vSensorsTask( void *pvParameters );
 
 
 
-void vStartPolling( unsigned portBASE_TYPE uxPriority )
+void vStartPolling( unsigned portBASE_TYPE uxPriority, xQueueHandle xQueue )
 {
+    static xQueueHandle xCmdQ;
+    xCmdQ = XQueue;
+
 	/* Enable and configure I2C0 */
 	PCONP    |=  (1 << 7);                /* Enable power for I2C0              */
 
@@ -48,11 +51,10 @@ void vStartPolling( unsigned portBASE_TYPE uxPriority )
 	I20CONSET =  I2C_I2EN;
 
 	/* Spawn the console task . */
-	xTaskCreate( vSensorsTask, ( signed char * ) "Sensors", sensorsSTACK_SIZE, NULL, uxPriority, ( xTaskHandle * ) NULL );
+	xTaskCreate( vSensorsTask, ( signed char * ) "Sensors", sensorsSTACK_SIZE, &xCmdQ, uxPriority, ( xTaskHandle * ) NULL );
 
 	printf("Sensor task started ...\r\n");
 }
-
 
 /* Get I2C button status */
 unsigned char getButtons()
@@ -142,6 +144,9 @@ static portTASK_FUNCTION( vSensorsTask, pvParameters )
 		/* Read buttons */
 		buttonState = getButtons();
 
+
+
+#if 0
 		changedState = buttonState ^ lastButtonState;
 		
 		if (buttonState != lastButtonState)
@@ -161,6 +166,7 @@ static portTASK_FUNCTION( vSensorsTask, pvParameters )
 			/* remember new state */
 			lastButtonState = buttonState;
 		}
+#endif
         
         /* delay before next poll */
     	vTaskDelayUntil( &xLastWakeTime, 20);
