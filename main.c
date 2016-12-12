@@ -37,6 +37,9 @@ int main (void)
 
 	/* Start the Lightning task */
 	vStartSensors(1, xCmdQ);
+	
+	/* Start Poller Task */
+	vStartPolling(1, xCmdQ);
 
 	/* Start the FreeRTOS Scheduler ... after this we're pre-emptive multitasking ...
 

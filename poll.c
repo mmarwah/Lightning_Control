@@ -112,6 +112,7 @@ unsigned char getButtons()
 	/* Wait for STOP to be sent */
 	while (I20CONSET & I2C_STO);
 
+	//printf("LED data %u ON\r\n", ledData);
 	return ledData ^ 0xf;
 }
 
@@ -133,7 +134,7 @@ static portTASK_FUNCTION( vSensorsTask, pvParameters )
 	/* Just to stop compiler warnings. */
 	( void ) pvParameters;
 
-	printf("Starting sensor poll ...\r\n");
+	printf("Starting switch poll ...\r\n");
 
 	/* initialise lastState with all buttons off */
 	lastButtonState = 0;
@@ -153,9 +154,9 @@ static portTASK_FUNCTION( vSensorsTask, pvParameters )
         {
             mask = 1 << i;
 
-            if (!(buttonState & mask))
+            if ((buttonState & mask))
             {
-                printf("Button %u is ON\r\n", i);
+								printf("Button %u is ON\r\n", i);
                 cmd_poll.region = SW1;
                 xQueueSendToBack(xCmdQ, &cmd_poll, portMAX_DELAY);
             }
@@ -183,6 +184,6 @@ static portTASK_FUNCTION( vSensorsTask, pvParameters )
 #endif
         
         /* delay before next poll */
-    	vTaskDelayUntil( &xLastWakeTime, 20);
+    	vTaskDelayUntil( &xLastWakeTime, 200);
 	}
 }
