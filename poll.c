@@ -13,6 +13,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "sensors.h"
+#include "utility.h"
 
 #define I2C_AA      0x00000004
 #define I2C_SI      0x00000008
@@ -26,12 +27,12 @@
 
 /* The LCD task. */
 static void vSensorsTask( void *pvParameters );
-Command cmd;
+Command cmd_poll;
 
 void vStartPolling( unsigned portBASE_TYPE uxPriority, xQueueHandle xQueue )
 {
     static xQueueHandle xCmdQ;
-    xCmdQ = XQueue;
+    xCmdQ = xQueue;
 
 	/* Enable and configure I2C0 */
 	PCONP    |=  (1 << 7);                /* Enable power for I2C0              */
@@ -50,9 +51,9 @@ void vStartPolling( unsigned portBASE_TYPE uxPriority, xQueueHandle xQueue )
 	I20CONSET =  I2C_I2EN;
 
 	/* Spawn the console task . */
-	xTaskCreate( vSensorsTask, ( signed char * ) "Sensors", sensorsSTACK_SIZE, &xCmdQ, uxPriority, ( xTaskHandle * ) NULL );
+	xTaskCreate( vSensorsTask, ( signed char * ) "Poll", sensorsSTACK_SIZE, &xCmdQ, uxPriority, ( xTaskHandle * ) NULL );
 
-	printf("Sensor task started ...\r\n");
+	printf("Poll task started ...\r\n");
 }
 
 /* Get I2C button status */
@@ -124,9 +125,10 @@ static portTASK_FUNCTION( vSensorsTask, pvParameters )
 	unsigned char changedState;
 	unsigned int i;
 	unsigned char mask;
+	xQueueHandle xCmdQ;
     
 
-     xCmdQ = * ( ( xQueueHandle * ) pvParameters );
+  xCmdQ = * ( ( xQueueHandle * ) pvParameters );
 
 	/* Just to stop compiler warnings. */
 	( void ) pvParameters;
@@ -147,15 +149,15 @@ static portTASK_FUNCTION( vSensorsTask, pvParameters )
         buttonState = getButtons();
 
         /* iterate over each of the 4 LS bits looking for changes in state */
-        for (i = 0; i <= 3; i = i++)
+        for (i = 0; i <= 3; i++)
         {
             mask = 1 << i;
 
             if (!(buttonState & mask))
             {
                 printf("Button %u is ON\r\n", i);
-                cmd.region = SW1;
-                xQueueSendToBack(xCmdQ, &cmd, portMAX_DELAY);
+                cmd_poll.region = SW1;
+                xQueueSendToBack(xCmdQ, &cmd_poll, portMAX_DELAY);
             }
         }
 #if 0
