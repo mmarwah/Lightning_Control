@@ -10,6 +10,7 @@
 #define MAX_SLIDER  2
 #define MAX_PRESET  2
 #define MAX_PIR     4
+#define SWITCH_OFFSET 11
 
 typedef enum Region_t
 {

@@ -157,32 +157,10 @@ static portTASK_FUNCTION( vSensorsTask, pvParameters )
             if ((buttonState & mask))
             {
 								printf("Button %u is ON\r\n", i);
-                cmd_poll.region = SW1;
+                cmd_poll.region = (SW1+i);
                 xQueueSendToBack(xCmdQ, &cmd_poll, portMAX_DELAY);
             }
-        }
-#if 0
-		changedState = buttonState ^ lastButtonState;
-		
-		if (buttonState != lastButtonState)
-		{
-		    /* iterate over each of the 4 LS bits looking for changes in state */
-			for (i = 0; i <= 3; i = i++)
-            {
-                mask = 1 << i;
-                
-                if (changedState & mask)
-                {
-                    printf("Button %u is %s\r\n", i,
-                        (buttonState & mask) ? "on" : "off");
-                }
-		    }
-		    
-			/* remember new state */
-			lastButtonState = buttonState;
-		}
-#endif
-        
+        }       
         /* delay before next poll */
     	vTaskDelayUntil( &xLastWakeTime, 200);
 	}

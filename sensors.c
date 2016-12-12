@@ -13,6 +13,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "sensors.h"
+#include "lcd.h"
 #include "utility.h"
 
 #define I2C_AA      0x00000004
@@ -210,6 +211,16 @@ static portTASK_FUNCTION( vSensorsTask, pvParameters )
             I2C_Utils(4, &data, PWM1);
         } else if ( cmd.region >= SW1 && cmd.region <= SW4 ) {
             printf("INPUT SWITCH PRESSED \r\n");
+					if (buttons[cmd.region-10].state == OFF) {
+						printf("Turning ON LED light based on motion\r\n");
+						StateCheck(cmd.region-10);
+						data = SetLedState();
+            /* Set PCA9532 LEDs */
+            I2C_Utils(1, &data, PWM0);
+						drawScreen();
+					} else {
+						printf("Setting timer for ON condition \r\n");
+					}
         }
 
         /* delay before next poll */

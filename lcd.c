@@ -12,7 +12,7 @@
 #include "lcd_grph.h"
 #include <stdio.h>
 #include <string.h>
-#include "utility.h"
+
 
 /* Maximum task stack size */
 #define lcdSTACK_SIZE			( ( unsigned portBASE_TYPE ) 256 )
@@ -108,7 +108,7 @@ static void drawButton(Button *button)
     }
 }
 
-static void drawScreen()
+void drawScreen()
 {
     int i;
 	
