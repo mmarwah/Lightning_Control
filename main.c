@@ -35,7 +35,7 @@ int main (void)
 	/* Setup the hardware for use with the Keil demo board. */
 	prvSetupHardware();
 	
-	xCmdQ = xQueueCreate(MAX_EVENTS, sizeof(Command));
+	xCmdQ = xQueueCreate(MAX_EVENTS, sizeof(Command_t));
 
     /* Start the console task */
 	vStartConsole(2, BAUD_RATE);

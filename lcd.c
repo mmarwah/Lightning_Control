@@ -119,12 +119,11 @@ void drawButton(Button *button)
                 button->y0 + 29,
                 button->display);
         /* Print Button Status */
-        lcd_putString( button->x0 + (((button->x1 - button->x0) - (strlen(button->display) * 5) / 2),
+        lcd_putString( button->x0 + (((button->x1 - button->x0) - (strlen(button->display) * 5)) / 2),
                 button->y0 + 45,
                 buffer);
     }
 }
-
 
 /* Drawing Screen with current scene */
 void drawScreen()
