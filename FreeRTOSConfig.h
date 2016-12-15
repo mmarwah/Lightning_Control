@@ -117,6 +117,11 @@ to exclude the API function. */
 #define INCLUDE_vTaskDelayUntil			1
 #define INCLUDE_vTaskDelay				1
 
+/* Timer related configuration */
+#define configUSE_TIMERS	1
+#define configTIMER_TASK_PRIORITY 1
+#define configTIMER_QUEUE_LENGTH 16
+#define configTIMER_TASK_STACK_DEPTH 256
 
 
 #endif /* FREERTOS_CONFIG_H */

@@ -30,16 +30,16 @@ int main (void)
 	xCmdQ = xQueueCreate(MAX_EVENTS, sizeof(Command));
 
     /* Start the console task */
-	vStartConsole(1, BAUD_RATE);
+	vStartConsole(2, BAUD_RATE);
 	
 	/* Start the Touchscreen task */
-	vStartLcd(1, xCmdQ);
+	vStartLcd(2, xCmdQ);
 
 	/* Start the Lightning task */
-	vStartSensors(1, xCmdQ);
+	vStartSensors(2, xCmdQ);
 	
 	/* Start Poller Task */
-	vStartPolling(1, xCmdQ);
+	vStartPolling(2, xCmdQ);
 
 	/* Start the FreeRTOS Scheduler ... after this we're pre-emptive multitasking ...
 
