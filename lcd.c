@@ -1,18 +1,25 @@
-/* 
-	Task that initialises the EA QVGA LCD display
-	with touch screen controller and processes touch screen
-	interrupt events.
+/* Description: This file contains the functionality of UI Task for 
+* CS7004 (EMBEDDED SYSTEM) "Lightning Control System" Project. 
+*
+* Author: Manas Marawaha (MSc. Mobile and Ubiquitous Computing)
+*         marawahm@tcd.ie
+*
+* Platform: FREE RTOS
 */
 
-#include "FreeRTOS.h"
-#include "task.h"
-#include "semphr.h"
-#include "lcd.h"
-#include "lcd_hw.h"
-#include "lcd_grph.h"
+/* Standard Includes */
 #include <stdio.h>
 #include <string.h>
 
+/* Scheduler includes. */
+#include "FreeRTOS.h"
+#include "task.h"
+#include "semphr.h"
+
+/* Application includes */
+#include "lcd.h"
+#include "lcd_hw.h"
+#include "lcd_grph.h"
 
 /* Maximum task stack size */
 #define lcdSTACK_SIZE			( ( unsigned portBASE_TYPE ) 256 )
@@ -27,8 +34,7 @@ static void vLcdTask( void *pvParameters );
 /* Semaphore for ISR/task synchronisation */
 xSemaphoreHandle xLcdSemphr;
 
-Command cmd;
-
+/* Button Map for each active area */
 Button buttons[] = {
     {MASTER, 80, 120, 160, 200, "MASTER", OFF, BLUE},
     {WHITEBOARD, 0, 0, 80, 80, "WHITEBOARD", OFF, OLIVE},
@@ -43,6 +49,7 @@ Button buttons[] = {
     {SRD, 185, 200, 210, 225, "-", OFF, LIGHT_GRAY},    /* Slider Right - */
 };
 
+/* Slider Map for each slider level*/
 Slider_t slider[] = {
     {LEVEL3, {{25,188,50,197},{25,175,50,185},{25,160,50,170},{25,145,50,155},{25,130,50,140}}, LIGHT_GRAY},
     {LEVEL3, {{185,188,210,197},{185,175,210,185},{185,160,210,170},{185,145,210,155},{185,130,210,140}}, LIGHT_GRAY},
@@ -54,33 +61,43 @@ void vStartLcd( unsigned portBASE_TYPE uxPriority, xQueueHandle xQueue )
 	
 	xCmdQ = xQueue;
 	
+    /* Semaphore Synchronization for TS events */
 	vSemaphoreCreateBinary(xLcdSemphr);
 
 	/* Spawn the console task. */
 	xTaskCreate( vLcdTask, ( signed char * ) "Lcd", lcdSTACK_SIZE, &xCmdQ, uxPriority, ( xTaskHandle * ) NULL );
 }
 
+/* Drawing Current State of slider */
 void DrawSlider()
 {
-    Region_t region;
     int i;
+    Region_t region;
 
     lcd_line(37, 125, 37, 200, LIGHT_GRAY);
     lcd_line(197, 125, 197, 200, LIGHT_GRAY);
+
+    /* Draw Active areas for both sliders */
     for ( region = SLI; region <= SRD; region++ ) {
-        lcd_fillRect(buttons[region].x0, buttons[region].y0, buttons[region].x1, buttons[region].y1, buttons[region].color);
+        lcd_fillRect(buttons[region].x0, buttons[region].y0, buttons[region].x1, 
+                     buttons[region].y1, buttons[region].color);
         /* Print Region name */
         lcd_putString( buttons[region].x0 + (((buttons[region].x1 - buttons[region].x0) - (strlen(buttons[region].display) * 5)) / 2),
                 buttons[region].y0+10,
                 buttons[region].display);
     }
+
+    /* Draw Current state of slider */
     for (i = 0; i < MAX_SLIDER; i++) {
         Slider_Level_t temp = slider[i].level;
-        lcd_fillRect(slider[i].slider_pos[temp].x0, slider[i].slider_pos[temp].y0, slider[i].slider_pos[temp].x1, slider[i].slider_pos[temp].y1                     , slider[i].color);
+        lcd_fillRect(slider[i].slider_pos[temp].x0, slider[i].slider_pos[temp].y0, 
+                     slider[i].slider_pos[temp].x1, slider[i].slider_pos[temp].y1,
+                     slider[i].color);
     }
 }
 
-static void drawButton(Button *button)
+/* Drawing Current State of Buttons */
+void drawButton(Button *button)
 {
     char buffer[5];
 
@@ -102,12 +119,14 @@ static void drawButton(Button *button)
                 button->y0 + 29,
                 button->display);
         /* Print Button Status */
-        lcd_putString( button->x0 + (((button->x1 - button->x0) - 15) / 2),
+        lcd_putString( button->x0 + (((button->x1 - button->x0) - (strlen(button->display) * 5) / 2),
                 button->y0 + 45,
                 buffer);
     }
 }
 
+
+/* Drawing Screen with current scene */
 void drawScreen()
 {
     int i;
@@ -119,6 +138,7 @@ void drawScreen()
     }
 }
 
+/* Get the region of activity using x and y positions */
 static Button * getButton(unsigned int x, unsigned int y)
 {
     int i;
@@ -134,6 +154,7 @@ static Button * getButton(unsigned int x, unsigned int y)
     return result;
 }
 
+/* State machine implementation */
 void StateCheck(Region_t region)
 {
     int i;
@@ -183,6 +204,7 @@ void StateCheck(Region_t region)
     }
 }
 
+/* UI Task function */
 static portTASK_FUNCTION( vLcdTask, pvParameters )
 {
     unsigned int pressure;
@@ -191,10 +213,13 @@ static portTASK_FUNCTION( vLcdTask, pvParameters )
     portTickType xLastWakeTime;
     xQueueHandle xCmdQ;
     Button *pressedButton;
+    
+    /* Command to sent in Q */
+    Command_t cmd;
 
-    /* Just to stop compiler warnings. */
     ( void ) pvParameters;
 
+    /* Capture Q handler passed as argument */
     xCmdQ = * ( ( xQueueHandle * ) pvParameters );
 
     printf("Touchscreen task running\r\n");
@@ -202,17 +227,13 @@ static portTASK_FUNCTION( vLcdTask, pvParameters )
     /* Initialise LCD display */
     lcd_init();
 
+    /* Display initial scene */
     drawScreen();
 
-    /* Infinite loop blocks waiting for a touch screen interrupt event from
-     * the queue. */
     for( ;; )
     {
-        /* Clear TS interrupts (EINT3) */
-        /* Reset and (re-)enable TS interrupts on EINT3 */
         EXTINT = 8;						/* Reset EINT3 */
 
-        /* Enable TS interrupt vector (VIC) (vector 17) */
         VICIntEnable = 1 << 17;			/* Enable interrupts on vector 17 */
 
         /* Block on a queue waiting for an event from the TS interrupt handler */
@@ -224,16 +245,14 @@ static portTASK_FUNCTION( vLcdTask, pvParameters )
         /* Measure next sleep interval from this point */
         xLastWakeTime = xTaskGetTickCount();
 
-        /* Start polling the touchscreen pressure and position ( getTouch(...) ) */
         /* Keep polling until pressure == 0 */
         getTouch(&xPos, &yPos, &pressure);
 
         pressedButton = getButton(xPos, yPos);
         if (pressedButton) {
-            lcd_fillScreen(pressedButton->color);
+            //lcd_fillScreen(pressedButton->color);
             cmd.region = pressedButton->region;
             StateCheck(pressedButton->region);
-
             /* Inform LED task about the region pressed */
             xQueueSendToBack(xCmdQ, &cmd, portMAX_DELAY);
         }
@@ -251,19 +270,16 @@ static portTASK_FUNCTION( vLcdTask, pvParameters )
     }
 }
 
-
+/* Interrupt handler for touch screen */
 void vLCD_ISRHandler( void )
 {
 	portBASE_TYPE xHigherPriorityTaskWoken = pdFALSE;
 
-	/* Process the touchscreen interrupt */
-	/* We would want to indicate to the task above that an event has occurred */
+	/* indicate to the task above that an event has occurred */
 	xSemaphoreGiveFromISR(xLcdSemphr, &xHigherPriorityTaskWoken);
 
 	EXTINT = 8;					/* Reset EINT3 */
 	VICVectAddr = 0;			/* Clear VIC interrupt */
 
-	/* Exit the ISR.  If a task was woken by either a character being received
-	or transmitted then a context switch will occur. */
 	portEXIT_SWITCHING_ISR( xHigherPriorityTaskWoken );
 }

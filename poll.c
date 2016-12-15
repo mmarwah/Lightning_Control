@@ -1,43 +1,47 @@
-/* 
-	Sample task that initialises the EA QVGA LCD display
-	with touch screen controller and processes touch screen
-	interrupt events.
+/* Description: This file contains the functionality of PIR Detection and Timmer 
+ * Task for CS7004 (EMBEDDED SYSTEM) "Lightning Control System" Project. 
+ *
+ * Author: Manas Marawaha (MSc. Mobile and Ubiquitous Computing)
+ *         marawahm@tcd.ie
+ *
+ * Platform: FREE RTOS
+ */
 
-*/
+/* Standard includes. */
+#include <stdio.h>
+#include <string.h>
 
+/* Scheduler includes. */
 #include "FreeRTOS.h"
 #include "task.h"
 #include "queue.h"
 #include "lpc24xx.h"
-#include <stdio.h>
-#include <string.h>
+#include "timers.h"
+
+/* Application includes */
 #include "sensors.h"
 #include "utility.h"
-#include "timers.h"
 #include "lcd.h"
-
-#define I2C_AA      0x00000004
-#define I2C_SI      0x00000008
-#define I2C_STO     0x00000010
-#define I2C_STA     0x00000020
-#define I2C_I2EN    0x00000040
 
 /* Maximum task stack size */
 #define sensorsSTACK_SIZE			( ( unsigned portBASE_TYPE ) 256 )
 
+/* Q handle shared between Timer and PIR detection task */
 static xQueueHandle xCmdQ;
+
+/* Timer handlers */
 TimerHandle_t xTimers[MAX_TIMER];
 
 /* The LCD task. */
 static void vSensorsTask( void *pvParameters );
-Command cmd_poll, cmd_timer;
 
+/* Command for Q */
+Command_t cmd_poll, cmd_timer;
 
+/* Timer Callback function */
 void vTimerCallback( TimerHandle_t xExpiredTimer )
 {
    Region_t TimmerID = ( Region_t ) pvTimerGetTimerID( xExpiredTimer );
-	
-	 printf("From Timer Callback %d\n", TimmerID);
 	
    if (buttons[TimmerID + 1].state == ON) {
        StateCheck(TimmerID + 1);
@@ -52,28 +56,27 @@ void vStartPolling( unsigned portBASE_TYPE uxPriority, xQueueHandle xQueue )
     int count;
     xCmdQ = xQueue;
 
-	/* Enable and configure I2C0 */
-	PCONP    |=  (1 << 7);                /* Enable power for I2C0              */
+	PCONP    |=  (1 << 7);                /* Enable power for I2C0 */
 
-	/* Initialize pins for SDA (P0.27) and SCL (P0.28) functions                */
+	/* Initialize pins for SDA (P0.27) and SCL (P0.28) functions */
 	PINSEL1  &= ~0x03C00000;
 	PINSEL1  |=  0x01400000;
 
-	/* Clear I2C state machine                                                  */
+	/* Clear I2C state machine */
 	I20CONCLR =  I2C_AA | I2C_SI | I2C_STA | I2C_I2EN;
 	
-	/* Setup I2C clock speed                                                    */
+	/* Setup I2C clock speed */
 	I20SCLL   =  0x80;
 	I20SCLH   =  0x80;
 	
 	I20CONSET =  I2C_I2EN;
 
-    /* Create Timer */
+    /* Create Timers */
     for ( count = 0; count < MAX_TIMER; count++ ) {
         xTimers[ count ] = xTimerCreate ( "Timer", pdMS_TO_TICKS( 5000 ), pdFALSE,
-                                          ( void * ) count, vTimerCallback );
+                ( void * ) count, vTimerCallback );
         if ( xTimers[ count ] == NULL ) 
-            printf("Timer creation failed\n");
+            printf("Timer %d creation failed\n", count);
     }
 
 	/* Spawn the console task . */
@@ -142,6 +145,7 @@ unsigned char getButtons()
 	return ledData ^ 0xf;
 }
 
+/* Task function for PIR detection */
 static portTASK_FUNCTION( vSensorsTask, pvParameters )
 {
 	portTickType xLastWakeTime;
@@ -150,6 +154,7 @@ static portTASK_FUNCTION( vSensorsTask, pvParameters )
 	unsigned char mask;
 	xQueueHandle xCmdQ;    
 
+    /* Capture Q handler passed as argument */
     xCmdQ = * ( ( xQueueHandle * ) pvParameters );
 
 	/* Just to stop compiler warnings. */
@@ -174,15 +179,13 @@ static portTASK_FUNCTION( vSensorsTask, pvParameters )
 
             if ((buttonState & mask))
             {
-								printf("Button %u is ON\r\n", i);
                 cmd_poll.region = (SW1+i);
                 xQueueSendToBack(xCmdQ, &cmd_poll, portMAX_DELAY);
                 /* Start region based timer */
-								printf("Starting Timer %d\n", i);
                 xTimerStart( xTimers[i], 0 );
             }
         } 
         /* delay before next poll */
-    	vTaskDelayUntil( &xLastWakeTime, 200);
-	}
+        vTaskDelayUntil( &xLastWakeTime, 200);
+    }
 }

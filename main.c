@@ -1,3 +1,12 @@
+/* Description: This file contains the main function for CS7004 (EMBEDDED SYSTEM)
+ * "Lightning Control System" Project. 
+ *
+ * Author: Manas Marawaha (MSc. Mobile and Ubiquitous Computing)
+ *         marawahm@tcd.ie
+ *
+ * Platform: FREE RTOS
+*/
+
 /* Standard includes. */
 #include <stdlib.h>
 
@@ -16,14 +25,13 @@
 
 extern void vLCD_ISREntry(void);
 
-/*
- * Hardware Initialization
- */
+/* Hardware Initialization */
 static void prvSetupHardware(void);
 
 int main (void)
 {
 	xQueueHandle xCmdQ;
+
 	/* Setup the hardware for use with the Keil demo board. */
 	prvSetupHardware();
 	
@@ -32,26 +40,18 @@ int main (void)
     /* Start the console task */
 	vStartConsole(2, BAUD_RATE);
 	
-	/* Start the Touchscreen task */
+	/* Start the UI task */
 	vStartLcd(2, xCmdQ);
 
-	/* Start the Lightning task */
+	/* Start the LED Controller task */
 	vStartSensors(2, xCmdQ);
 	
-	/* Start Poller Task */
+	/* Start PIR Detection task */
 	vStartPolling(2, xCmdQ);
 
-	/* Start the FreeRTOS Scheduler ... after this we're pre-emptive multitasking ...
-
-	NOTE : Tasks run in system mode and the scheduler runs in Supervisor mode.
-	The processor MUST be in supervisor mode when vTaskStartScheduler is 
-	called.  The demo applications included in the FreeRTOS.org download switch
-	to supervisor mode prior to main being called.  If you are not using one of
-	these demo application projects then ensure Supervisor mode is used here. */
+	/* Start the FreeRTOS Scheduler...*/ 
 	vTaskStartScheduler();
 
-	/* Should never reach here!  If you do then there was not enough heap
-	available for the idle task to be created. */
 	while(1);
 }
 
@@ -60,21 +60,20 @@ static void prvSetupHardware( void )
 	/* Perform the hardware setup required. */ 
 	
     /* Enable UART0. */
-    PCONP   |= (1 << 3);                 /* Enable UART0 power                */
-    PINSEL0 |= 0x00000050;               /* Enable TxD0 and RxD0              */
+    PCONP   |= (1 << 3);                    /* Enable UART0 power */
+    PINSEL0 |= 0x00000050;                  /* Enable TxD0 and RxD0 */
 
 	/* Initialise LCD hardware */
 	lcd_hw_init();
 
 	/* Setup LCD interrupts */
-	PINSEL4 |= 1 << 26;				/* Enable P2.13 for EINT3 function */
-	EXTMODE |= 8;					/* EINT3 edge-sensitive mode */
-	EXTPOLAR &= ~0x8;				/* Falling edge mode for EINT3 */
+	PINSEL4 |= 1 << 26;				        /* Enable P2.13 for EINT3 function */
+	EXTMODE |= 8;					        /* EINT3 edge-sensitive mode */
+	EXTPOLAR &= ~0x8;				        /* Falling edge mode for EINT3 */
 
 	/* Setup VIC for LCD interrupts */
-	VICIntSelect &= ~(1 << 17);		/* Configure vector 17 (EINT3) for IRQ */
-	VICVectPriority17 = 15;			/* Set priority 15 (lowest) for vector 17 */
-	VICVectAddr17 = (unsigned long)vLCD_ISREntry;
-									/* Set handler vector */
+	VICIntSelect &= ~(1 << 17);		        /* Configure vector 17 (EINT3) for IRQ */
+	VICVectPriority17 = 15;			        /* Set priority 15 (lowest) for vector 17 */
+	VICVectAddr17 = (unsigned long)vLCD_ISREntry;   /* Set handler vector */
 
 }

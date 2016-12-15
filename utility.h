@@ -32,11 +32,11 @@ typedef enum Region_t
     SW4         /* PIR Input 4 */
 } Region_t;
 
-typedef struct Command 
+typedef struct Command_t 
 {
 	int value;
 	Region_t region;
-} Command;
+} Command_t;
 
 typedef enum Slider_Level_t
 {

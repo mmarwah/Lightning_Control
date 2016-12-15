@@ -1,30 +1,31 @@
-/* 
-	Sample task that initialises the EA QVGA LCD display
-	with touch screen controller and processes touch screen
-	interrupt events.
+/* Description: This file contains the functionality of LED Controller Task for 
+ * CS7004 (EMBEDDED SYSTEM) "Lightning Control System" Project. 
+ *
+ * Author: Manas Marawaha (MSc. Mobile and Ubiquitous Computing)
+ *         marawahm@tcd.ie
+ *
+ * Platform: FREE RTOS
+ */
 
-	Jonathan Dukes (jdukes@scss.tcd.ie)
-*/
+/* Standard includes. */
+#include <stdio.h>
+#include <string.h>
 
+/* Scheduler includes. */
 #include "FreeRTOS.h"
 #include "task.h"
 #include "queue.h"
 #include "lpc24xx.h"
-#include <stdio.h>
-#include <string.h>
+
+/* Application includes */
 #include "sensors.h"
 #include "lcd.h"
 #include "utility.h"
 
-#define I2C_AA      0x00000004
-#define I2C_SI      0x00000008
-#define I2C_STO     0x00000010
-#define I2C_STA     0x00000020
-#define I2C_I2EN    0x00000040
-
-
 /* Maximum task stack size */
 #define sensorsSTACK_SIZE			( ( unsigned portBASE_TYPE ) 256 )
+
+/* PwmMap Contains the map for different level of slider */
 unsigned char PwmMap[] = { 0x19, 0x40, 0x80, 0xC0, 0xFF };
 
 /* The LCD task. */
@@ -59,11 +60,11 @@ void vStartSensors( unsigned portBASE_TYPE uxPriority, xQueueHandle xQueue )
 }
 
 
-/* Set PCA9532 LEDs */
-void I2C_Utils(int choice, unsigned char *LedMap, unsigned char pwm)
+/* Description: Set PCA9532 Registers
+ * Parameters: Param 1: Choice [0 -> LS2, 1 -> PWM0, 2 -> PWM1] 
+ *             Param 2: Data to send for selected register */
+void I2C_Utils(int choice, unsigned char data)
 {
-	unsigned char ledData;
-
 	/* Initialise */
 	I20CONCLR =  I2C_AA | I2C_SI | I2C_STA | I2C_STO;
 	
@@ -88,35 +89,13 @@ void I2C_Utils(int choice, unsigned char *LedMap, unsigned char pwm)
         /* Wait for DATA with control word to be sent */
         while (!(I20CONSET & I2C_SI));
 
-        /* Update LED States */
-        I20DAT = ( *LedMap );
+        /* Send data to write PCA9532 LS2 register */
+        I20DAT = data;
         I20CONCLR =  I2C_SI;
 
         /* Wait for DATA to be sent */
         while (!(I20CONSET & I2C_SI));
-    } else if (choice == 2) { /* Getting current state of LEDs from INPUT 1 register */
-        /* Request send repeated START */
-        I20CONSET =  I2C_STA;
-        I20CONCLR =  I2C_SI;
-
-        /* Wait for START to be sent */
-        while (!(I20CONSET & I2C_SI));
-
-        /* Request send PCA9532 ADDRESS and R/W bit and clear SI */		
-        I20DAT    =  0xC1;
-        I20CONCLR =  I2C_SI | I2C_STA;
-
-        /* Wait for ADDRESS and R/W to be sent */
-        while (!(I20CONSET & I2C_SI));
-
-        I20CONCLR = I2C_SI;
-
-        /* Wait for DATA to be received */
-        while (!(I20CONSET & I2C_SI));
-
-        ledData = I20DAT;
-        ( *LedMap ) = ledData ^ 0xf;
-    } else if (choice == 3) {   /* Set PWM0 register */
+    } else if (choice == 2) {   /* Set PWM0 register */
         /* Send control data to select PCA9532 PWM0 register */
         I20DAT = 0x03;
         I20CONCLR =  I2C_SI;
@@ -125,12 +104,12 @@ void I2C_Utils(int choice, unsigned char *LedMap, unsigned char pwm)
         while (!(I20CONSET & I2C_SI));
 
         /* Send data to write PCA9532 PWM0 register */
-        I20DAT = pwm;
+        I20DAT = data;
         I20CONCLR =  I2C_SI;
 
         /* Wait for DATA to be sent */
         while (!(I20CONSET & I2C_SI));
-    } else if (choice == 4) {   /* Set PWM1 register */
+    } else if (choice == 3) {   /* Set PWM1 register */
         /* Send control data to select PCA9532 PWM1 register */
         I20DAT = 0x05;
         I20CONCLR =  I2C_SI;
@@ -139,7 +118,7 @@ void I2C_Utils(int choice, unsigned char *LedMap, unsigned char pwm)
         while (!(I20CONSET & I2C_SI));
 
         /* Send data to write PCA9532 PWM1 register */
-        I20DAT = pwm;
+        I20DAT = data;
         I20CONCLR =  I2C_SI;
 
         /* Wait for DATA to be sent */
@@ -153,6 +132,8 @@ void I2C_Utils(int choice, unsigned char *LedMap, unsigned char pwm)
 	while (I20CONSET & I2C_STO);
 }
 
+/* SetLedState returns the hex values to
+ * control the LEDs based on it state */
 unsigned char SetLedState()
 {
     unsigned char ledstate = 0x00;
@@ -169,25 +150,26 @@ unsigned char SetLedState()
     return ledstate;
 }
 
+/* LED Controller task function */
 static portTASK_FUNCTION( vSensorsTask, pvParameters )
 {
     portTickType xLastWakeTime;
     unsigned char data;
-    unsigned char PWM0 = 0x80;      /* Default 50% Brightness */
-    unsigned char PWM1 = 0x80;      /* Default 50% Brightness */
     xQueueHandle xCmdQ;
-    Command cmd;
+    
+    /* Command to sent in Q */
+    Command_t cmd;
 
+    /* Capture Q handler passed as argument */
     xCmdQ = * ( ( xQueueHandle * ) pvParameters );
 
-    /* Just to stop compiler warnings. */
     ( void ) pvParameters;
 
-	printf("Starting sensor poll ...\r\n");
+	printf("Starting LED Controller task ...\r\n");
 
-    /* Set PWM0 and PWM1 */
-    I2C_Utils(3, &data, PWM0);
-    I2C_Utils(4, &data, PWM1);
+    /* Set Initial state of PWM0 and PWM1 */
+    I2C_Utils(2, PwmMap[slider[0].level]);      /* Default 50% Brightness */
+    I2C_Utils(3, PwmMap[slider[1].level]);      /* Default 50% Brightness */
 
 	/* initial xLastWakeTime for accurate polling interval */
 	xLastWakeTime = xTaskGetTickCount();
@@ -199,30 +181,29 @@ static portTASK_FUNCTION( vSensorsTask, pvParameters )
         /* Get command from Q */
         xQueueReceive(xCmdQ, &cmd, portMAX_DELAY);
 
+        /* Set LED for buttons */
         if ( cmd.region >= MASTER && cmd.region <= PRESET2 ) {
             data = SetLedState();
             /* Set PCA9532 LEDs */
-            I2C_Utils(1, &data, PWM0);
+            I2C_Utils(1, data);
+            /* Set PWM for left slider */    
         } else if ( cmd.region >= SLI && cmd.region <= SLD ) {
-            PWM0 = PwmMap[slider[0].level];
-            I2C_Utils(3, &data, PWM0);
+            data = PwmMap[slider[0].level];
+            I2C_Utils(2, data);
+            /* Set PWM for right slider */
         } else if ( cmd.region >= SRI && cmd.region <= SRD ) {
-            PWM1 = PwmMap[slider[1].level];
-            I2C_Utils(4, &data, PWM1);
+            data = PwmMap[slider[1].level];
+            I2C_Utils(3, data);
+            /* Set LED based on PIR detection */
         } else if ( cmd.region >= SW1 && cmd.region <= SW4 ) {
-            printf("INPUT SWITCH PRESSED \r\n");
             if (buttons[cmd.region-10].state == OFF) {
-                printf("Turning ON LED light based on motion\r\n");
                 StateCheck(cmd.region-10);
                 data = SetLedState();
                 /* Set PCA9532 LEDs */
-                I2C_Utils(1, &data, PWM0);
+                I2C_Utils(1, data);
                 drawScreen();
-            } else {
-                printf("Setting timer for ON condition \r\n");
             }
         }
-
         /* delay before next poll */
         vTaskDelayUntil( &xLastWakeTime, 20);
     }
