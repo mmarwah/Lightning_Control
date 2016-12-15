@@ -7,9 +7,6 @@
 #include "task.h"
 #include "console.h"
 
-/* Timer Includes */
-#include "timer.h"
-
 /* Application includes */
 #include "lcd.h"
 #include "sensors.h"

@@ -14,6 +14,7 @@
 #include "sensors.h"
 #include "utility.h"
 #include "timers.h"
+#include "lcd.h"
 
 #define I2C_AA      0x00000004
 #define I2C_SI      0x00000008
@@ -30,6 +31,15 @@ TimerHandle_t xTimers[MAX_TIMER];
 /* The LCD task. */
 static void vSensorsTask( void *pvParameters );
 Command cmd_poll;
+
+void vTimerCallback( TimerHandle_t xTimer )
+{
+   if (buttons[1].state == ON) {
+       StateCheck(1);
+       cmd_poll.region = 1;
+       xQueueSendToBack(xCmdQ, &cmd_poll, portMAX_DELAY);
+   }
+}
 
 void vStartPolling( unsigned portBASE_TYPE uxPriority, xQueueHandle xQueue )
 {
@@ -125,16 +135,6 @@ unsigned char getButtons()
 	//printf("LED data %u ON\r\n", ledData);
 	return ledData ^ 0xf;
 }
-
-void vTimerCallback( TimerHandle_t xTimer )
-{
-   if (buttons[xTimer + 1].state == ON) {
-       StateCheck(xTimer + 1);
-       cmd_poll.region = (xTimer + 1);
-       xQueueSendToBack(xCmdQ, &cmd_poll, portMAX_DELAY);
-   }
-}
-
 
 static portTASK_FUNCTION( vSensorsTask, pvParameters )
 {
