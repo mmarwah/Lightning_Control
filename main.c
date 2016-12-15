@@ -7,6 +7,9 @@
 #include "task.h"
 #include "console.h"
 
+/* Timer Includes */
+#include "timer.h"
+
 /* Application includes */
 #include "lcd.h"
 #include "sensors.h"
@@ -14,12 +17,12 @@
 #include "lcd_grph.h"
 #include "utility.h"
 
-extern void vLCD_ISREntry( void );
+extern void vLCD_ISREntry(void);
 
 /*
  * Hardware Initialization
  */
-static void prvSetupHardware( void );
+static void prvSetupHardware(void);
 
 int main (void)
 {
