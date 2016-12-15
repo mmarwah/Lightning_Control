@@ -32,12 +32,14 @@ TimerHandle_t xTimers[MAX_TIMER];
 static void vSensorsTask( void *pvParameters );
 Command cmd_poll;
 
-void vTimerCallback( TimerHandle_t xTimer )
+void vTimerCallback( TimerHandle_t xExpiredTimer )
 {
-   if (buttons[1].state == ON) {
-       StateCheck(1);
-       cmd_poll.region = 1;
+   int32_t TimmerID = ( int32_t ) pvTimerGetTimerID( xExpiredTimer );
+   if (buttons[TimmerID + 1].state == ON) {
+       StateCheck(TimmerID + 1);
+       cmd_poll.region = TimmerID + 1;
        xQueueSendToBack(xCmdQ, &cmd_poll, portMAX_DELAY);
+       drawScreen();
    }
 }
 
