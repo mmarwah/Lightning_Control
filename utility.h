@@ -12,6 +12,8 @@
 #define MAX_PIR     4
 #define SWITCH_OFFSET 11
 #define MAX_TIMER 4
+#define SWITCH_REGION_OFFSET 10
+
 
 typedef enum Region_t
 {

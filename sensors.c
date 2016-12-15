@@ -196,8 +196,8 @@ static portTASK_FUNCTION( vSensorsTask, pvParameters )
             I2C_Utils(3, data);
             /* Set LED based on PIR detection */
         } else if ( cmd.region >= SW1 && cmd.region <= SW4 ) {
-            if (buttons[cmd.region-10].state == OFF) {
-                StateCheck(cmd.region-10);
+            if (buttons[cmd.region-SWITCH_REGION_OFFSET].state == OFF) {
+                StateCheck(cmd.region-SWITCH_REGION_OFFSET);
                 data = SetLedState();
                 /* Set PCA9532 LEDs */
                 I2C_Utils(1, data);

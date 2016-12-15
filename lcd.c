@@ -37,10 +37,10 @@ xSemaphoreHandle xLcdSemphr;
 /* Button Map for each active area */
 Button buttons[] = {
     {MASTER, 80, 120, 160, 200, "MASTER", OFF, BLUE},
-    {WHITEBOARD, 0, 0, 80, 80, "WHITEBOARD", OFF, OLIVE},
-    {DICE, 0, 240, 80, 320, "DICE", OFF, CYAN},
-    {AISLE, 160, 0, 240, 80, "AISLE", OFF, YELLOW},
-    {SEATING, 160, 240, 240, 320, "SEATING", OFF, RED},
+    {WHITEBOARD, 0, 0, 80, 80, "WHITEBOARD", OFF, BLUE},
+    {DICE, 0, 240, 80, 320, "DICE", OFF, BLUE},
+    {AISLE, 160, 0, 240, 80, "AISLE", OFF, BLUE},
+    {SEATING, 160, 240, 240, 320, "SEATING", OFF, BLUE},
     {PRESET1, 85, 0, 155, 40, "LECTURE", OFF, DARK_GRAY},
     {PRESET2, 85, 280, 155, 320, "EXAM", OFF, DARK_GRAY},
     {SLI, 25, 100, 50, 125, "+", OFF, LIGHT_GRAY},      /* Slider Left + */
@@ -119,7 +119,7 @@ void drawButton(Button *button)
                 button->y0 + 29,
                 button->display);
         /* Print Button Status */
-        lcd_putString( button->x0 + (((button->x1 - button->x0) - (strlen(button->display) * 5)) / 2),
+        lcd_putString( button->x0 + (((button->x1 - button->x0) - 15) / 2),
                 button->y0 + 45,
                 buffer);
     }

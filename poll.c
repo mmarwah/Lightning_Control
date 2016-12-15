@@ -45,6 +45,8 @@ void vTimerCallback( TimerHandle_t xExpiredTimer )
 	
    if (buttons[TimmerID + 1].state == ON) {
        StateCheck(TimmerID + 1);
+			 /* Send event to LED controller task to turn OFF 
+					region related to expired timer */
        cmd_timer.region = TimmerID + 1;
        xQueueSendToBack(xCmdQ, &cmd_timer, portMAX_DELAY);
        drawScreen();
@@ -141,7 +143,6 @@ unsigned char getButtons()
 	/* Wait for STOP to be sent */
 	while (I20CONSET & I2C_STO);
 
-	//printf("LED data %u ON\r\n", ledData);
 	return ledData ^ 0xf;
 }
 
@@ -179,6 +180,7 @@ static portTASK_FUNCTION( vSensorsTask, pvParameters )
 
             if ((buttonState & mask))
             {
+								/* Send event to LED controller task with PIR ID */
                 cmd_poll.region = (SW1+i);
                 xQueueSendToBack(xCmdQ, &cmd_poll, portMAX_DELAY);
                 /* Start region based timer */
