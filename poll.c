@@ -30,15 +30,19 @@ TimerHandle_t xTimers[MAX_TIMER];
 
 /* The LCD task. */
 static void vSensorsTask( void *pvParameters );
-Command cmd_poll;
+Command cmd_poll, cmd_timer;
+
 
 void vTimerCallback( TimerHandle_t xExpiredTimer )
 {
-   int32_t TimmerID = ( int32_t ) pvTimerGetTimerID( xExpiredTimer );
+   Region_t TimmerID = ( Region_t ) pvTimerGetTimerID( xExpiredTimer );
+	
+	 printf("From Timer Callback %d\n", TimmerID);
+	
    if (buttons[TimmerID + 1].state == ON) {
        StateCheck(TimmerID + 1);
-       cmd_poll.region = TimmerID + 1;
-       xQueueSendToBack(xCmdQ, &cmd_poll, portMAX_DELAY);
+       cmd_timer.region = TimmerID + 1;
+       xQueueSendToBack(xCmdQ, &cmd_timer, portMAX_DELAY);
        drawScreen();
    }
 }
@@ -66,8 +70,8 @@ void vStartPolling( unsigned portBASE_TYPE uxPriority, xQueueHandle xQueue )
 
     /* Create Timer */
     for ( count = 0; count < MAX_TIMER; count++ ) {
-        xTimers[ count ] = xTimerCreate ( "Timer", pdMS_TO_TICKS( 5000 ), pdTRUE,
-                                          ( void * ) 0, vTimerCallback );
+        xTimers[ count ] = xTimerCreate ( "Timer", pdMS_TO_TICKS( 5000 ), pdFALSE,
+                                          ( void * ) count, vTimerCallback );
         if ( xTimers[ count ] == NULL ) 
             printf("Timer creation failed\n");
     }
@@ -170,11 +174,12 @@ static portTASK_FUNCTION( vSensorsTask, pvParameters )
 
             if ((buttonState & mask))
             {
-				printf("Button %u is ON\r\n", i);
+								printf("Button %u is ON\r\n", i);
                 cmd_poll.region = (SW1+i);
                 xQueueSendToBack(xCmdQ, &cmd_poll, portMAX_DELAY);
                 /* Start region based timer */
-                xTimerStart( xTimers[0], 0 );
+								printf("Starting Timer %d\n", i);
+                xTimerStart( xTimers[i], 0 );
             }
         } 
         /* delay before next poll */
