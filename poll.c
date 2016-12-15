@@ -3,7 +3,6 @@
 	with touch screen controller and processes touch screen
 	interrupt events.
 
-	Jonathan Dukes (jdukes@scss.tcd.ie)
 */
 
 #include "FreeRTOS.h"
@@ -14,6 +13,7 @@
 #include <string.h>
 #include "sensors.h"
 #include "utility.h"
+#include "timers.h"
 
 #define I2C_AA      0x00000004
 #define I2C_SI      0x00000008
@@ -21,9 +21,11 @@
 #define I2C_STA     0x00000020
 #define I2C_I2EN    0x00000040
 
-
 /* Maximum task stack size */
 #define sensorsSTACK_SIZE			( ( unsigned portBASE_TYPE ) 256 )
+
+static xQueueHandle xCmdQ;
+TimerHandle_t xTimers[MAX_TIMER];
 
 /* The LCD task. */
 static void vSensorsTask( void *pvParameters );
@@ -31,7 +33,7 @@ Command cmd_poll;
 
 void vStartPolling( unsigned portBASE_TYPE uxPriority, xQueueHandle xQueue )
 {
-    static xQueueHandle xCmdQ;
+    int count;
     xCmdQ = xQueue;
 
 	/* Enable and configure I2C0 */
@@ -49,6 +51,14 @@ void vStartPolling( unsigned portBASE_TYPE uxPriority, xQueueHandle xQueue )
 	I20SCLH   =  0x80;
 	
 	I20CONSET =  I2C_I2EN;
+
+    /* Create Timer */
+    for ( count = 0; count < MAX_TIMER; count++ ) {
+        xTimers[ count ] = xTimerCreate ( "Timer", pdMS_TO_TICKS( 5000 ), pdTRUE,
+                                          ( void * ) 0, vTimerCallback );
+        if ( xTimers[ count ] == NULL ) 
+            printf("Timer creation failed\n");
+    }
 
 	/* Spawn the console task . */
 	xTaskCreate( vSensorsTask, ( signed char * ) "Poll", sensorsSTACK_SIZE, &xCmdQ, uxPriority, ( xTaskHandle * ) NULL );
@@ -116,28 +126,30 @@ unsigned char getButtons()
 	return ledData ^ 0xf;
 }
 
+void vTimerCallback( TimerHandle_t xTimer )
+{
+   if (buttons[xTimer + 1].state == ON) {
+       StateCheck(xTimer + 1);
+       cmd_poll.region = (xTimer + 1);
+       xQueueSendToBack(xCmdQ, &cmd_poll, portMAX_DELAY);
+   }
+}
 
 
 static portTASK_FUNCTION( vSensorsTask, pvParameters )
 {
 	portTickType xLastWakeTime;
 	unsigned char buttonState;
-	unsigned char lastButtonState;
-	unsigned char changedState;
 	unsigned int i;
 	unsigned char mask;
-	xQueueHandle xCmdQ;
-    
+	xQueueHandle xCmdQ;    
 
-  xCmdQ = * ( ( xQueueHandle * ) pvParameters );
+    xCmdQ = * ( ( xQueueHandle * ) pvParameters );
 
 	/* Just to stop compiler warnings. */
 	( void ) pvParameters;
 
 	printf("Starting switch poll ...\r\n");
-
-	/* initialise lastState with all buttons off */
-	lastButtonState = 0;
 
 	/* initial xLastWakeTime for accurate polling interval */
 	xLastWakeTime = xTaskGetTickCount();
@@ -156,11 +168,13 @@ static portTASK_FUNCTION( vSensorsTask, pvParameters )
 
             if ((buttonState & mask))
             {
-								printf("Button %u is ON\r\n", i);
+				printf("Button %u is ON\r\n", i);
                 cmd_poll.region = (SW1+i);
                 xQueueSendToBack(xCmdQ, &cmd_poll, portMAX_DELAY);
+                /* Start region based timer */
+                xTimerStart( xTimers[0], 0 );
             }
-        }       
+        } 
         /* delay before next poll */
     	vTaskDelayUntil( &xLastWakeTime, 200);
 	}

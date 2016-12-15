@@ -11,6 +11,7 @@
 #define MAX_PRESET  2
 #define MAX_PIR     4
 #define SWITCH_OFFSET 11
+#define MAX_TIMER 4
 
 typedef enum Region_t
 {
@@ -36,17 +37,6 @@ typedef struct Command
 	int value;
 	Region_t region;
 } Command;
-
-#if 0
-typedef enum Slider_Level_t
-{
-    LEVEL1 = 0x19,  /* 10 % Brightness */
-    LEVEL2 = 0x40,  /* 25 % Brightness */
-    LEVEL3 = 0x80,  /* 50 % Brightness */
-    LEVEL4 = 0xC0,  /* 75 % Brightness */
-    LEVEL5 = 0xFF   /* 100 % Brightness */
-} Slider_Level_t;
-#endif
 
 typedef enum Slider_Level_t
 {
