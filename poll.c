@@ -24,7 +24,7 @@
 #include "lcd.h"
 
 /* Maximum task stack size */
-#define sensorsSTACK_SIZE			( ( unsigned portBASE_TYPE ) 256 )
+#define pirSTACK_SIZE			( ( unsigned portBASE_TYPE ) 256 )
 
 /* Q handle shared between Timer and PIR detection task */
 static xQueueHandle xCmdQ;
@@ -33,10 +33,16 @@ static xQueueHandle xCmdQ;
 TimerHandle_t xTimers[MAX_TIMER];
 
 /* The LCD task. */
-static void vSensorsTask( void *pvParameters );
+static void vPIRTask( void *pvParameters );
 
 /* Command for Q */
 Command_t cmd_poll, cmd_timer;
+
+/* mutex for button area map mutual exclusion */
+SemaphoreHandle_t ButtonLockPoll;
+
+/* mutex for I2C mutual exclusion */
+SemaphoreHandle_t BusLockPoll;
 
 /* Timer Callback function */
 void vTimerCallback( TimerHandle_t xExpiredTimer )
@@ -53,10 +59,12 @@ void vTimerCallback( TimerHandle_t xExpiredTimer )
    }
 }
 
-void vStartPolling( unsigned portBASE_TYPE uxPriority, xQueueHandle xQueue )
+void vStartPolling( unsigned portBASE_TYPE uxPriority, xQueueHandle xQueue, xSemaphoreHandle xBusMutex, xSemaphoreHandle xButtonMutex)
 {
-    int count;
-    xCmdQ = xQueue;
+	int count;
+	xCmdQ = xQueue;
+	ButtonLockPoll = xButtonMutex;
+	BusLockPoll = xBusMutex;
 
 	PCONP    |=  (1 << 7);                /* Enable power for I2C0 */
 
@@ -82,15 +90,17 @@ void vStartPolling( unsigned portBASE_TYPE uxPriority, xQueueHandle xQueue )
     }
 
 	/* Spawn the console task . */
-	xTaskCreate( vSensorsTask, ( signed char * ) "Poll", sensorsSTACK_SIZE, &xCmdQ, uxPriority, ( xTaskHandle * ) NULL );
+	xTaskCreate( vPIRTask, ( signed char * ) "PIR", pirSTACK_SIZE, &xCmdQ, uxPriority, ( xTaskHandle * ) NULL );
 
-	printf("Poll task started ...\r\n");
+	printf("PIR Poll task started ...\r\n");
 }
 
 /* Get I2C button status */
 unsigned char getButtons()
 {
 	unsigned char ledData;
+		/* Enter Critical Section */
+	if(xSemaphoreTake(BusLockPoll, 1000)) {
 
 	/* Initialise */
 	I20CONCLR =  I2C_AA | I2C_SI | I2C_STA | I2C_STO;
@@ -142,12 +152,15 @@ unsigned char getButtons()
 
 	/* Wait for STOP to be sent */
 	while (I20CONSET & I2C_STO);
+		xSemaphoreGive(BusLockPoll);
+  }
+	/* Exit Critical Section */
 
 	return ledData ^ 0xf;
 }
 
 /* Task function for PIR detection */
-static portTASK_FUNCTION( vSensorsTask, pvParameters )
+static portTASK_FUNCTION( vPIRTask, pvParameters )
 {
 	portTickType xLastWakeTime;
 	unsigned char buttonState;

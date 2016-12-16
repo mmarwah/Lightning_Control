@@ -15,6 +15,7 @@
 #include "queue.h"
 #include "task.h"
 #include "console.h"
+#include "semphr.h"
 
 /* Application includes */
 #include "lcd.h"
@@ -28,6 +29,12 @@ extern void vLCD_ISREntry(void);
 /* Hardware Initialization */
 static void prvSetupHardware(void);
 
+/* mutex for button area map mutual exclusion */
+SemaphoreHandle_t ButtonLock;
+
+/* mutex for I2C mutual exclusion */
+SemaphoreHandle_t BusLock;
+
 int main (void)
 {
 	xQueueHandle xCmdQ;
@@ -36,18 +43,26 @@ int main (void)
 	prvSetupHardware();
 	
 	xCmdQ = xQueueCreate(MAX_EVENTS, sizeof(Command_t));
-
+	
+	/* Mutex for mutually exclusive access of button map 
+		 among multiple task */
+	ButtonLock = xSemaphoreCreateMutex();
+	
+	/* Mutex for mutually exclusive access of slider map 
+		 among multiple task */
+	BusLock = xSemaphoreCreateMutex();
+	
     /* Start the console task */
 	vStartConsole(2, BAUD_RATE);
 	
 	/* Start the UI task */
-	vStartLcd(2, xCmdQ);
+	vStartLcd(2, xCmdQ, ButtonLock);
 
 	/* Start the LED Controller task */
-	vStartSensors(2, xCmdQ);
+	vStartSensors(2, xCmdQ, BusLock, ButtonLock);
 	
 	/* Start PIR Detection task */
-	vStartPolling(2, xCmdQ);
+	vStartPolling(2, xCmdQ, BusLock, ButtonLock);
 
 	/* Start the FreeRTOS Scheduler...*/ 
 	vTaskStartScheduler();

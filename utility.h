@@ -1,7 +1,8 @@
 #ifndef COMMAND_H
 #define COMMAND_H
 
-#include"lcd_grph.h"
+#include "lcd_grph.h"
+#include "semphr.h"
 
 /* Queue Size */
 #define MAX_EVENTS  16

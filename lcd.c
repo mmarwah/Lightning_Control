@@ -34,6 +34,10 @@ static void vLcdTask( void *pvParameters );
 /* Semaphore for ISR/task synchronisation */
 xSemaphoreHandle xLcdSemphr;
 
+/* mutex for button area map mutual exclusion */
+SemaphoreHandle_t ButtonLockUI;
+
+
 /* Button Map for each active area */
 Button buttons[] = {
     {MASTER, 80, 120, 160, 200, "MASTER", OFF, BLUE},
@@ -55,13 +59,13 @@ Slider_t slider[] = {
     {LEVEL3, {{185,188,210,197},{185,175,210,185},{185,160,210,170},{185,145,210,155},{185,130,210,140}}, LIGHT_GRAY},
 };
 
-void vStartLcd( unsigned portBASE_TYPE uxPriority, xQueueHandle xQueue )
+void vStartLcd( unsigned portBASE_TYPE uxPriority, xQueueHandle xQueue, xSemaphoreHandle xButtonMutex )
 {
 	static xQueueHandle xCmdQ;
-	
 	xCmdQ = xQueue;
-	
-    /* Semaphore Synchronization for TS events */
+	ButtonLockUI = xButtonMutex;
+    
+	/* Semaphore Synchronization for TS events */
 	vSemaphoreCreateBinary(xLcdSemphr);
 
 	/* Spawn the console task. */
@@ -105,7 +109,8 @@ void drawButton(Button *button)
         strcpy(buffer, "OFF");
     else
         strcpy(buffer, "ON");
-
+				/* Enter Critical Section */
+	if(xSemaphoreTake(ButtonLockUI, 1000)) {
     lcd_fillRect(button->x0, button->y0, button->x1, button->y1, button->color);
 
     if ( button->region == PRESET1 || button->region == PRESET2 ) {
@@ -123,6 +128,9 @@ void drawButton(Button *button)
                 button->y0 + 45,
                 buffer);
     }
+		xSemaphoreGive(ButtonLockUI);
+  }
+	/* Exit Critical Section */
 }
 
 /* Drawing Screen with current scene */
@@ -143,12 +151,17 @@ static Button * getButton(unsigned int x, unsigned int y)
     int i;
     Button *result = 0;
 
+		/* Enter Critical Section */
+		if(xSemaphoreTake(ButtonLockUI, 1000)) {
     for ( i = 0; i < ( MAX_BUTTON + (MAX_SLIDER * 2) + MAX_PRESET) && !result; i++) {
         if (x >= buttons[i].x0 && x <= buttons[i].x1
                 && y >= buttons[i].y0 && y <= buttons[i].y1) {
             result = &buttons[i];
         }
     }
+					xSemaphoreGive(ButtonLockUI);
+  }
+	/* Exit Critical Section */
 
     return result;
 }
@@ -157,6 +170,8 @@ static Button * getButton(unsigned int x, unsigned int y)
 void StateCheck(Region_t region)
 {
     int i;
+		/* Enter Critical Section */
+	if(xSemaphoreTake(ButtonLockUI, 1000)) {
     if (region == MASTER) {     /* STATE CHANGE BASED ON MASTER */
         if (buttons[WHITEBOARD].state == ON && buttons[DICE].state == ON 
                 && buttons[AISLE].state == ON && buttons[SEATING].state == ON) {
@@ -201,6 +216,9 @@ void StateCheck(Region_t region)
         else if (region == SRD && slider[1].level != LEVEL1)
             slider[1].level--;
     }
+			xSemaphoreGive(ButtonLockUI);
+  }
+	/* Exit Critical Section */
 }
 
 /* UI Task function */

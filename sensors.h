@@ -2,9 +2,10 @@
 #define SENSORS_H
 #include "freertos.h"
 #include "queue.h"
+#include "semphr.h"
 
-void vStartSensors( unsigned portBASE_TYPE uxPriority, xQueueHandle xQueue );
-void vStartPolling( unsigned portBASE_TYPE uxPriority, xQueueHandle xQueue );
+void vStartSensors( unsigned portBASE_TYPE uxPriority, xQueueHandle xQueue, xSemaphoreHandle xBusMutex, xSemaphoreHandle xButtonMutex);
+void vStartPolling( unsigned portBASE_TYPE uxPriority, xQueueHandle xQueue, xSemaphoreHandle xBusMutex, xSemaphoreHandle xButtonMutex);
 
 
 /* I2C Defines */

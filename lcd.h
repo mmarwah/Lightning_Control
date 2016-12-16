@@ -5,7 +5,7 @@
 #include "queue.h"
 #include "utility.h"
 
-void vStartLcd( unsigned portBASE_TYPE uxPriority, xQueueHandle xQueue);
+void vStartLcd( unsigned portBASE_TYPE uxPriority, xQueueHandle xQueue, xSemaphoreHandle xButtonMutex);
 void StateCheck(Region_t region);
 void drawScreen();
 #endif

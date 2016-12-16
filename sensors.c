@@ -16,6 +16,7 @@
 #include "task.h"
 #include "queue.h"
 #include "lpc24xx.h"
+#include "semphr.h"
 
 /* Application includes */
 #include "sensors.h"
@@ -27,15 +28,21 @@
 
 /* PwmMap Contains the map for different level of slider */
 unsigned char PwmMap[] = { 0x19, 0x40, 0x80, 0xC0, 0xFF };
+/* mutex for button area map mutual exclusion */
+SemaphoreHandle_t ButtonLockLED;
+/* mutex for I2C mutual exclusion */
+SemaphoreHandle_t BusLockLED;
 
 /* The LCD task. */
 static void vSensorsTask( void *pvParameters );
 
-void vStartSensors( unsigned portBASE_TYPE uxPriority, xQueueHandle xQueue )
+void vStartSensors( unsigned portBASE_TYPE uxPriority, xQueueHandle xQueue, xSemaphoreHandle xBusMutex, xSemaphoreHandle xButtonMutex)
 {
 	static xQueueHandle xCmdQ;
 	
 	xCmdQ = xQueue;
+	ButtonLockLED = xButtonMutex;
+	BusLockLED = xBusMutex;
 	
 	/* Enable and configure I2C0 */
 	PCONP    |=  (1 << 7);                /* Enable power for I2C0              */
@@ -65,6 +72,8 @@ void vStartSensors( unsigned portBASE_TYPE uxPriority, xQueueHandle xQueue )
  *             Param 2: Data to send for selected register */
 void I2C_Utils(int choice, unsigned char data)
 {
+	/* Enter Critical Section */
+	if(xSemaphoreTake(BusLockLED, 1000)) {
 	/* Initialise */
 	I20CONCLR =  I2C_AA | I2C_SI | I2C_STA | I2C_STO;
 	
@@ -130,6 +139,9 @@ void I2C_Utils(int choice, unsigned char data)
 
 	/* Wait for STOP to be sent */
 	while (I20CONSET & I2C_STO);
+	xSemaphoreGive(BusLockLED);
+  }
+	/* Exit Critical Section */
 }
 
 /* SetLedState returns the hex values to
@@ -137,16 +149,21 @@ void I2C_Utils(int choice, unsigned char data)
 unsigned char SetLedState()
 {
     unsigned char ledstate = 0x00;
+	
+		/* Enter Critical Section */
+		if(xSemaphoreTake(ButtonLockLED, 1000)) {
+			if (buttons[WHITEBOARD].state == ON)
+				ledstate |= 0x02;       /* LED8 --> PWM0 */
+			if (buttons[DICE].state == ON)
+				ledstate |= 0x08;       /* LED9 --> PWM0 */
+			if (buttons[AISLE].state == ON)
+				ledstate |= 0x30;       /* LED10 --> PWM1 */
+			if (buttons[SEATING].state == ON)
+				ledstate |= 0xC0;       /* LED11 --> PWM1 */            
+			xSemaphoreGive(ButtonLockLED);
+    }
+		/* Exit Critical Section */
 
-    if (buttons[WHITEBOARD].state == ON)
-        ledstate |= 0x02;       /* LED8 --> PWM0 */
-    if (buttons[DICE].state == ON)
-        ledstate |= 0x08;       /* LED9 --> PWM0 */
-    if (buttons[AISLE].state == ON)
-        ledstate |= 0x30;       /* LED10 --> PWM1 */
-    if (buttons[SEATING].state == ON)
-        ledstate |= 0xC0;       /* LED11 --> PWM1 */
-    
     return ledstate;
 }
 
@@ -155,6 +172,7 @@ static portTASK_FUNCTION( vSensorsTask, pvParameters )
 {
     portTickType xLastWakeTime;
     unsigned char data;
+		int level;
     xQueueHandle xCmdQ;
     
     /* Command to sent in Q */
@@ -165,7 +183,7 @@ static portTASK_FUNCTION( vSensorsTask, pvParameters )
 
     ( void ) pvParameters;
 
-	printf("Starting LED Controller task ...\r\n");
+		printf("Starting LED Controller task ...\r\n");
 
     /* Set Initial state of PWM0 and PWM1 */
     I2C_Utils(2, PwmMap[slider[0].level]);      /* Default 50% Brightness */
