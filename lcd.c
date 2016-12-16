@@ -42,11 +42,11 @@ portTickType xLastWakeTime;
 
 /* Button Map for each active area */
 Button buttons[] = {
-    {MASTER, 80, 120, 160, 200, "MASTER", OFF, BLUE},
-    {WHITEBOARD, 0, 0, 80, 80, "WHITEBOARD", OFF, OLIVE},
-    {DICE, 0, 240, 80, 320, "DICE", OFF, OLIVE},
-    {AISLE, 160, 0, 240, 80, "AISLE", OFF, OLIVE},
-    {SEATING, 160, 240, 240, 320, "SEATING", OFF, OLIVE},
+    {MASTER, 80, 120, 160, 200, "MASTER", OFF, NAVY},
+    {WHITEBOARD, 0, 0, 80, 80, "WHITEBOARD", OFF, PURPLE},
+    {DICE, 0, 240, 80, 320, "DICE", OFF, PURPLE},
+    {AISLE, 160, 0, 240, 80, "AISLE", OFF, PURPLE},
+    {SEATING, 160, 240, 240, 320, "SEATING", OFF, PURPLE},
     {PRESET1, 85, 0, 155, 40, "LECTURE", OFF, DARK_GRAY},
     {PRESET2, 85, 280, 155, 320, "EXAM", OFF, DARK_GRAY},
     {SLI, 25, 100, 50, 125, "+", OFF, LIGHT_GRAY},      /* Slider Left + */
