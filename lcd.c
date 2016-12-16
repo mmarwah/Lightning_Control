@@ -37,6 +37,8 @@ xSemaphoreHandle xLcdSemphr;
 /* mutex for button area map mutual exclusion */
 SemaphoreHandle_t ButtonLockUI;
 
+portTickType xLastWakeTime;
+
 
 /* Button Map for each active area */
 Button buttons[] = {
@@ -174,6 +176,14 @@ static Button * getButton(unsigned int x, unsigned int y)
     return result;
 }
 
+/* Drawing Screen with current scene */
+void drawPopUp()
+{
+		lcd_fillRect(25, 100, 210, 225, RED);
+		lcd_putString( 50, 160, "PLEASE SWITCH ON LIGHT!");
+		vTaskDelayUntil( &xLastWakeTime, 500 ); 
+}
+
 /* State machine implementation */
 void StateCheck(Region_t region)
 {
@@ -214,15 +224,24 @@ void StateCheck(Region_t region)
         buttons[DICE].state = ON;
         buttons[AISLE].state = ON;
         buttons[SEATING].state = ON;
-    } else if (region >= SLI && region <= SRD ) {   /* SLIDERS STATES */
+    } else if (region >= SLI && region <= SLD ) {   /* LEFT SLIDERS STATES */
+				if ((region == SLI || region == SLD) && (buttons[WHITEBOARD].state == ON || buttons[DICE].state == ON)) { 
         if (region == SLI && slider[0].level != LEVEL5)
             slider[0].level++;
         else if (region == SLD && slider[0].level != LEVEL1)
             slider[0].level--;
+			} else {
+				drawPopUp();
+			}
+		} else if (region >= SRI && region <= SRD ) {   /* RIGHT SLIDERS STATES */		
+			if ((region == SRI || region == SRD) && (buttons[AISLE].state == ON || buttons[SEATING].state == ON)) { 
         if (region == SRI && slider[1].level != LEVEL5)
             slider[1].level++;
         else if (region == SRD && slider[1].level != LEVEL1)
             slider[1].level--;
+			} else {
+				drawPopUp();
+			}
     }
 			xSemaphoreGive(ButtonLockUI);
   }
@@ -235,7 +254,6 @@ static portTASK_FUNCTION( vLcdTask, pvParameters )
     unsigned int pressure;
     unsigned int xPos;
     unsigned int yPos;
-    portTickType xLastWakeTime;
     xQueueHandle xCmdQ;
     Button *pressedButton;
     
