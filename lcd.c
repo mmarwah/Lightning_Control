@@ -41,10 +41,10 @@ SemaphoreHandle_t ButtonLockUI;
 /* Button Map for each active area */
 Button buttons[] = {
     {MASTER, 80, 120, 160, 200, "MASTER", OFF, BLUE},
-    {WHITEBOARD, 0, 0, 80, 80, "WHITEBOARD", OFF, BLUE},
-    {DICE, 0, 240, 80, 320, "DICE", OFF, BLUE},
-    {AISLE, 160, 0, 240, 80, "AISLE", OFF, BLUE},
-    {SEATING, 160, 240, 240, 320, "SEATING", OFF, BLUE},
+    {WHITEBOARD, 0, 0, 80, 80, "WHITEBOARD", OFF, OLIVE},
+    {DICE, 0, 240, 80, 320, "DICE", OFF, OLIVE},
+    {AISLE, 160, 0, 240, 80, "AISLE", OFF, OLIVE},
+    {SEATING, 160, 240, 240, 320, "SEATING", OFF, OLIVE},
     {PRESET1, 85, 0, 155, 40, "LECTURE", OFF, DARK_GRAY},
     {PRESET2, 85, 280, 155, 320, "EXAM", OFF, DARK_GRAY},
     {SLI, 25, 100, 50, 125, "+", OFF, LIGHT_GRAY},      /* Slider Left + */
@@ -58,6 +58,8 @@ Slider_t slider[] = {
     {LEVEL3, {{25,188,50,197},{25,175,50,185},{25,160,50,170},{25,145,50,155},{25,130,50,140}}, LIGHT_GRAY},
     {LEVEL3, {{185,188,210,197},{185,175,210,185},{185,160,210,170},{185,145,210,155},{185,130,210,140}}, LIGHT_GRAY},
 };
+
+char *SLevelMap[] = {"MIN", "25%", "50%", "75%", "MAX"};
 
 void vStartLcd( unsigned portBASE_TYPE uxPriority, xQueueHandle xQueue, xSemaphoreHandle xButtonMutex )
 {
@@ -75,7 +77,7 @@ void vStartLcd( unsigned portBASE_TYPE uxPriority, xQueueHandle xQueue, xSemapho
 /* Drawing Current State of slider */
 void DrawSlider()
 {
-    int i;
+    int i, x0, x1, y0, y1;
     Region_t region;
 
     lcd_line(37, 125, 37, 200, LIGHT_GRAY);
@@ -94,9 +96,15 @@ void DrawSlider()
     /* Draw Current state of slider */
     for (i = 0; i < MAX_SLIDER; i++) {
         Slider_Level_t temp = slider[i].level;
-        lcd_fillRect(slider[i].slider_pos[temp].x0, slider[i].slider_pos[temp].y0, 
-                     slider[i].slider_pos[temp].x1, slider[i].slider_pos[temp].y1,
-                     slider[i].color);
+				x0 = slider[i].slider_pos[temp].x0;
+				y0 = slider[i].slider_pos[temp].y0;
+				x1 = slider[i].slider_pos[temp].x1;
+				y1 = slider[i].slider_pos[temp].y1;
+			
+        lcd_fillRect(x0, y0, x1, y1, slider[i].color);
+			  /* Print Region name */
+        lcd_putString( x0 + (((x1 - x0) - 15) / 2), y0+1,
+                SLevelMap[temp]);
     }
 }
 
