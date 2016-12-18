@@ -88,7 +88,7 @@ void DrawSlider()
     /* Draw Active areas for both sliders */
     for ( region = SLI; region <= SRD; region++ ) {
         lcd_fillRect(buttons[region].x0, buttons[region].y0, buttons[region].x1, 
-                     buttons[region].y1, buttons[region].color);
+                buttons[region].y1, buttons[region].color);
         /* Print Region name */
         lcd_putString( buttons[region].x0 + (((buttons[region].x1 - buttons[region].x0) - (strlen(buttons[region].display) * 5)) / 2),
                 buttons[region].y0+10,
@@ -98,13 +98,13 @@ void DrawSlider()
     /* Draw Current state of slider */
     for (i = 0; i < MAX_SLIDER; i++) {
         Slider_Level_t temp = slider[i].level;
-				x0 = slider[i].slider_pos[temp].x0;
-				y0 = slider[i].slider_pos[temp].y0;
-				x1 = slider[i].slider_pos[temp].x1;
-				y1 = slider[i].slider_pos[temp].y1;
-			
+        x0 = slider[i].slider_pos[temp].x0;
+        y0 = slider[i].slider_pos[temp].y0;
+        x1 = slider[i].slider_pos[temp].x1;
+        y1 = slider[i].slider_pos[temp].y1;
+
         lcd_fillRect(x0, y0, x1, y1, slider[i].color);
-			  /* Print Region name */
+        /* Print Region name */
         lcd_putString( x0 + (((x1 - x0) - 15) / 2), y0+1,
                 SLevelMap[temp]);
     }
@@ -119,35 +119,35 @@ void drawButton(Button *button)
         strcpy(buffer, "OFF");
     else
         strcpy(buffer, "ON");
-				/* Enter Critical Section */
-	if(xSemaphoreTake(ButtonLockUI, 1000)) {
-    lcd_fillRect(button->x0, button->y0, button->x1, button->y1, button->color);
+    /* Enter Critical Section */
+    if(xSemaphoreTake(ButtonLockUI, 1000)) {
+        lcd_fillRect(button->x0, button->y0, button->x1, button->y1, button->color);
 
-    if ( button->region == PRESET1 || button->region == PRESET2 ) {
-        /* Print Region name */
-        lcd_putString( button->x0 + (((button->x1 - button->x0) - (strlen(button->display) * 5)) / 2),
-                button->y0 + 20,
-                button->display);
-    } else {
-        /* Print Region name */
-        lcd_putString( button->x0 + (((button->x1 - button->x0) - (strlen(button->display) * 5)) / 2),
-                button->y0 + 29,
-                button->display);
-        /* Print Button Status */
-        lcd_putString( button->x0 + (((button->x1 - button->x0) - 15) / 2),
-                button->y0 + 45,
-                buffer);
+        if ( button->region == PRESET1 || button->region == PRESET2 ) {
+            /* Print Region name */
+            lcd_putString( button->x0 + (((button->x1 - button->x0) - (strlen(button->display) * 5)) / 2),
+                    button->y0 + 20,
+                    button->display);
+        } else {
+            /* Print Region name */
+            lcd_putString( button->x0 + (((button->x1 - button->x0) - (strlen(button->display) * 5)) / 2),
+                    button->y0 + 29,
+                    button->display);
+            /* Print Button Status */
+            lcd_putString( button->x0 + (((button->x1 - button->x0) - 15) / 2),
+                    button->y0 + 45,
+                    buffer);
+        }
+        xSemaphoreGive(ButtonLockUI);
     }
-		xSemaphoreGive(ButtonLockUI);
-  }
-	/* Exit Critical Section */
+    /* Exit Critical Section */
 }
 
 /* Drawing Screen with current scene */
 void drawScreen()
 {
     int i;
-	
+
     lcd_fillScreen(WHITE);
     DrawSlider();
     for (i = 0; i < (MAX_BUTTON + MAX_PRESET); i++) {
@@ -161,17 +161,17 @@ static Button * getButton(unsigned int x, unsigned int y)
     int i;
     Button *result = 0;
 
-		/* Enter Critical Section */
-		if(xSemaphoreTake(ButtonLockUI, 1000)) {
-    for ( i = 0; i < ( MAX_BUTTON + (MAX_SLIDER * 2) + MAX_PRESET) && !result; i++) {
-        if (x >= buttons[i].x0 && x <= buttons[i].x1
-                && y >= buttons[i].y0 && y <= buttons[i].y1) {
-            result = &buttons[i];
+    /* Enter Critical Section */
+    if(xSemaphoreTake(ButtonLockUI, 1000)) {
+        for ( i = 0; i < ( MAX_BUTTON + (MAX_SLIDER * 2) + MAX_PRESET) && !result; i++) {
+            if (x >= buttons[i].x0 && x <= buttons[i].x1
+                    && y >= buttons[i].y0 && y <= buttons[i].y1) {
+                result = &buttons[i];
+            }
         }
+        xSemaphoreGive(ButtonLockUI);
     }
-					xSemaphoreGive(ButtonLockUI);
-  }
-	/* Exit Critical Section */
+    /* Exit Critical Section */
 
     return result;
 }
@@ -179,73 +179,73 @@ static Button * getButton(unsigned int x, unsigned int y)
 /* Drawing Screen with current scene */
 void drawPopUp()
 {
-		lcd_fillRect(25, 100, 210, 225, RED);
-		lcd_putString( 50, 160, "PLEASE SWITCH ON LIGHT!");
-		vTaskDelayUntil( &xLastWakeTime, 500 ); 
+    lcd_fillRect(25, 100, 210, 225, RED);
+    lcd_putString( 50, 160, "PLEASE SWITCH ON LIGHT!");
+    vTaskDelayUntil( &xLastWakeTime, 500 ); 
 }
 
 /* State machine implementation */
 void StateCheck(Region_t region)
 {
     int i;
-		/* Enter Critical Section */
-	if(xSemaphoreTake(ButtonLockUI, 1000)) {
-    if (region == MASTER) {     /* STATE CHANGE BASED ON MASTER */
-        if (buttons[WHITEBOARD].state == ON && buttons[DICE].state == ON 
-                && buttons[AISLE].state == ON && buttons[SEATING].state == ON) {
-            for ( i = 0; i < MAX_BUTTON; i++ ) {
-                buttons[i].state = OFF;
-            } 
-        } else {
-            for ( i = 0; i < MAX_BUTTON; i++ ) {
-                buttons[i].state = ON;
-            }
-        }
-    } else if (region >= WHITEBOARD && region <= SEATING ) {   /* STATE CHANGE BASED ON INDIVIDUAL REGION */
-        if (buttons[region].state == ON) {
-            buttons[region].state = OFF;
-            buttons[MASTER].state = OFF;
-        } else if (buttons[region].state == OFF) {
-            buttons[region].state = ON;
+    /* Enter Critical Section */
+    if(xSemaphoreTake(ButtonLockUI, 1000)) {
+        if (region == MASTER) {     /* STATE CHANGE BASED ON MASTER */
             if (buttons[WHITEBOARD].state == ON && buttons[DICE].state == ON 
                     && buttons[AISLE].state == ON && buttons[SEATING].state == ON) {
-                buttons[MASTER].state = ON;
+                for ( i = 0; i < MAX_BUTTON; i++ ) {
+                    buttons[i].state = OFF;
+                } 
+            } else {
+                for ( i = 0; i < MAX_BUTTON; i++ ) {
+                    buttons[i].state = ON;
+                }
+            }
+        } else if (region >= WHITEBOARD && region <= SEATING ) {   /* STATE CHANGE BASED ON INDIVIDUAL REGION */
+            if (buttons[region].state == ON) {
+                buttons[region].state = OFF;
+                buttons[MASTER].state = OFF;
+            } else if (buttons[region].state == OFF) {
+                buttons[region].state = ON;
+                if (buttons[WHITEBOARD].state == ON && buttons[DICE].state == ON 
+                        && buttons[AISLE].state == ON && buttons[SEATING].state == ON) {
+                    buttons[MASTER].state = ON;
+                }
+            }
+        } else if (region == PRESET1) {   /* PRESET-1, Lecture Mode */
+            buttons[MASTER].state = OFF;
+            buttons[WHITEBOARD].state = ON;
+            buttons[DICE].state = ON;
+            buttons[AISLE].state = ON;
+            buttons[SEATING].state = OFF;
+        } else if (region == PRESET2) {   /* PRESET-2, Exam Mode */
+            buttons[MASTER].state = OFF;
+            buttons[WHITEBOARD].state = OFF;
+            buttons[DICE].state = ON;
+            buttons[AISLE].state = ON;
+            buttons[SEATING].state = ON;
+        } else if (region >= SLI && region <= SLD ) {   /* LEFT SLIDERS STATES */
+            if ((region == SLI || region == SLD) && (buttons[WHITEBOARD].state == ON || buttons[DICE].state == ON)) { 
+                if (region == SLI && slider[0].level != LEVEL5)
+                    slider[0].level++;
+                else if (region == SLD && slider[0].level != LEVEL1)
+                    slider[0].level--;
+            } else {
+                drawPopUp();
+            }
+        } else if (region >= SRI && region <= SRD ) {   /* RIGHT SLIDERS STATES */		
+            if ((region == SRI || region == SRD) && (buttons[AISLE].state == ON || buttons[SEATING].state == ON)) { 
+                if (region == SRI && slider[1].level != LEVEL5)
+                    slider[1].level++;
+                else if (region == SRD && slider[1].level != LEVEL1)
+                    slider[1].level--;
+            } else {
+                drawPopUp();
             }
         }
-    } else if (region == PRESET1) {   /* PRESET-1, Lecture Mode */
-        buttons[MASTER].state = OFF;
-        buttons[WHITEBOARD].state = ON;
-        buttons[DICE].state = ON;
-        buttons[AISLE].state = ON;
-        buttons[SEATING].state = OFF;
-    } else if (region == PRESET2) {   /* PRESET-2, Exam Mode */
-        buttons[MASTER].state = OFF;
-        buttons[WHITEBOARD].state = OFF;
-        buttons[DICE].state = ON;
-        buttons[AISLE].state = ON;
-        buttons[SEATING].state = ON;
-    } else if (region >= SLI && region <= SLD ) {   /* LEFT SLIDERS STATES */
-				if ((region == SLI || region == SLD) && (buttons[WHITEBOARD].state == ON || buttons[DICE].state == ON)) { 
-        if (region == SLI && slider[0].level != LEVEL5)
-            slider[0].level++;
-        else if (region == SLD && slider[0].level != LEVEL1)
-            slider[0].level--;
-			} else {
-				drawPopUp();
-			}
-		} else if (region >= SRI && region <= SRD ) {   /* RIGHT SLIDERS STATES */		
-			if ((region == SRI || region == SRD) && (buttons[AISLE].state == ON || buttons[SEATING].state == ON)) { 
-        if (region == SRI && slider[1].level != LEVEL5)
-            slider[1].level++;
-        else if (region == SRD && slider[1].level != LEVEL1)
-            slider[1].level--;
-			} else {
-				drawPopUp();
-			}
+        xSemaphoreGive(ButtonLockUI);
     }
-			xSemaphoreGive(ButtonLockUI);
-  }
-	/* Exit Critical Section */
+    /* Exit Critical Section */
 }
 
 /* UI Task function */
@@ -256,7 +256,7 @@ static portTASK_FUNCTION( vLcdTask, pvParameters )
     unsigned int yPos;
     xQueueHandle xCmdQ;
     Button *pressedButton;
-    
+
     /* Command to sent in Q */
     Command_t cmd;
 

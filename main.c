@@ -19,7 +19,7 @@
 
 /* Application includes */
 #include "lcd.h"
-#include "sensors.h"
+#include "led_controller.h"
 #include "lcd_hw.h"
 #include "lcd_grph.h"
 #include "utility.h"
@@ -37,37 +37,37 @@ SemaphoreHandle_t BusLock;
 
 int main (void)
 {
-	xQueueHandle xCmdQ;
+    xQueueHandle xCmdQ;
 
-	/* Setup the hardware for use with the Keil demo board. */
-	prvSetupHardware();
-	
-	xCmdQ = xQueueCreate(MAX_EVENTS, sizeof(Command_t));
-	
-	/* Mutex for mutually exclusive access of button map 
-		 among multiple task */
-	ButtonLock = xSemaphoreCreateMutex();
-	
-	/* Mutex for mutually exclusive access of slider map 
-		 among multiple task */
-	BusLock = xSemaphoreCreateMutex();
-	
+    /* Setup the hardware for use with the Keil demo board. */
+    prvSetupHardware();
+
+    xCmdQ = xQueueCreate(MAX_EVENTS, sizeof(Command_t));
+
+    /* Mutex for mutually exclusive access of button map 
+       among multiple task */
+    ButtonLock = xSemaphoreCreateMutex();
+
+    /* Mutex for mutually exclusive access of slider map 
+       among multiple task */
+    BusLock = xSemaphoreCreateMutex();
+
     /* Start the console task */
-	vStartConsole(2, BAUD_RATE);
-	
-	/* Start the UI task */
-	vStartLcd(2, xCmdQ, ButtonLock);
+    vStartConsole(2, BAUD_RATE);
 
-	/* Start the LED Controller task */
-	vStartSensors(2, xCmdQ, BusLock, ButtonLock);
-	
-	/* Start PIR Detection task */
-	vStartPolling(2, xCmdQ, BusLock, ButtonLock);
+    /* Start the UI task */
+    vStartLcd(2, xCmdQ, ButtonLock);
 
-	/* Start the FreeRTOS Scheduler...*/ 
-	vTaskStartScheduler();
+    /* Start the LED Controller task */
+    vStartSensors(2, xCmdQ, BusLock, ButtonLock);
 
-	while(1);
+    /* Start PIR Detection task */
+    vStartPolling(2, xCmdQ, BusLock, ButtonLock);
+
+    /* Start the FreeRTOS Scheduler...*/ 
+    vTaskStartScheduler();
+
+    while(1);
 }
 
 static void prvSetupHardware( void )
@@ -90,5 +90,4 @@ static void prvSetupHardware( void )
 	VICIntSelect &= ~(1 << 17);		        /* Configure vector 17 (EINT3) for IRQ */
 	VICVectPriority17 = 15;			        /* Set priority 15 (lowest) for vector 17 */
 	VICVectAddr17 = (unsigned long)vLCD_ISREntry;   /* Set handler vector */
-
 }
